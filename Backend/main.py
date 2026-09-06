@@ -41,7 +41,6 @@ from shared import (
     supabase, call_llm_for_json, fetch_profile_context, fetch_role_skills,
     HF_MODEL_REPO_ID,
 )
-from Rag_quiz_generation import router as rag_router
 
 QUESTIONS_PER_QUIZ = 20
 
@@ -56,7 +55,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(rag_router)
 
 
 # ============================================================
