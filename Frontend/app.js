@@ -27,7 +27,7 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLI
 
 // The Python/LangChain quiz-generation backend (main.py). Currently
 // only running locally — update this once it's actually deployed.
-const BACKEND_URL = 'const BACKEND_URL = 'https://backend-eta-two-91.vercel.app';
+const BACKEND_URL = 'https://backend-eta-two-91.vercel.app';
 
 // ---------- cross-page navigation ----------
 // The signup wizard's 6 steps live in ONE file (signup.html), so any
