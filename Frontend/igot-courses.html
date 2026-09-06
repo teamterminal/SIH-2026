@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recommended Courses — Sankhya Setu</title>
+<meta name="description" content="Sankhya Setu reads what your role needs, runs a short quiz to find your gaps, and routes you straight to the right course on iGOT Karmayogi.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+</head>
+<body data-screen="igot-courses">
+
+<div class="bg-glow" aria-hidden="true"></div>
+
+  <div class="dash-corner-nav">
+    <button class="nav-hamburger" onclick="toggleSidebar()" aria-label="Open Menu">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 20 20"><rect x="1" y="1" width="18" height="18" rx="3" fill="none" stroke="#12181F" stroke-width="1.6"/><path d="M5 10.5l3 3 7-7" fill="none" stroke="#D9A62E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      SANKHYA SETU
+    </div>
+  </div>
+<div id="app">
+  <section class="screen active" id="screen-igot-courses">
+    <div class="wrap">
+      
+      <div style="margin-top:16px;">
+        <a href="dashboard.html" style="font-family:'IBM Plex Mono',monospace; font-size:11px; text-transform:uppercase; color:var(--slate); text-decoration:none; font-weight:700;">&larr; Back to Dashboard</a>
+      </div>
+
+      <div class="eyebrow" style="margin-top:16px;">TARGETED CURRICULUM</div>
+      <h1 style="margin-top:6px;">iGOT Recommended Courses</h1>
+      <p class="lede" style="margin-top:4px;">Direct enrollments matched to address your quiz diagnostic gaps.</p>
+
+      <!-- External Portal Notice -->
+      <div class="plain-msg" style="margin-top:16px;">
+        <b>Direct sync with Karmayogi Bharat.</b>
+        <span>Completing any course below automatically flags your account for a follow-up mini reassessment.</span>
+      </div>
+
+      <!-- Course Cards -->
+      <div id="igot-loading" style="text-align:center; padding:24px 0; color:var(--slate);">Finding your matched courses…</div>
+      <div id="igot-empty" style="display:none; text-align:center; padding:32px 14px; background:var(--card); border:1px dashed var(--line); border-radius:8px; margin-top:12px;">
+        <h3 style="font-size:16px; font-weight:700; font-family:'Space Grotesk',sans-serif;">Nothing to recommend yet</h3>
+        <p style="font-size:13px; color:var(--slate); margin-top:6px; line-height:1.5;">Take a diagnostic quiz first so we know which gaps to target.</p>
+      </div>
+      <div id="igot-course-list" style="display:none; flex-direction:column; gap:16px; margin-top:20px;"></div>
+
+      <div class="stack" style="margin-top:24px;">
+        <button class="btn-ghost" onclick="goScreen('dashboard')" style="margin:0 auto;">&larr; Return to Dashboard</button>
+      </div>
+
+      <div class="spacer"></div>
+    </div>
+  </section>
+</div>
+
+<div class="profile-fab" id="profileFab" title="Your profile" style="display:none;">
+  <span id="fabInitials">--</span>
+  <img id="fabImg" style="display:none;" alt="">
+</div>
+
+<div class="demo-jump">
+  <div class="demo-menu" id="demoMenu">
+    <div class="lbl">Jump to screen (demo)</div>
+    <button onclick="jump('landing')">0 · Landing</button>
+    <button onclick="jump('login')">1 · Login</button>
+    <button onclick="jump('signup-1')">1b · Sign up</button>
+    <button onclick="jump('dashboard')">1c · Dashboard</button>
+    <button onclick="jump('role')">2 · Pick role</button>
+    <button onclick="jump('upload')">3 · Upload material</button>
+    <button onclick="jump('spin')">4 · Scoring</button>
+    <button onclick="jump('quiz')">5 · Quiz</button>
+    <button onclick="jump('results')">6 · Results</button>
+    <button onclick="jump('practice')">7 · Learn</button>
+    <button onclick="jump('progress')">8 · Progress</button>
+    <button onclick="jump('profile')">9 · Profile</button>
+    <button onclick="jump('igot-courses')">10 · iGOT Courses</button>
+  </div>
+  <button onclick="toggleDemoMenu()" aria-label="Jump to screen">::</button>
+</div>
+<div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
+<aside class="app-sidebar" id="appSidebar">
+  <div class="sb-header">
+    <div class="brand" style="justify-content:flex-start;">
+      <svg class="mark" viewBox="0 0 20 20"><rect x="1" y="1" width="18" height="18" rx="3" fill="none" stroke="#12181F" stroke-width="1.6"/><path d="M5 10.5l3 3 7-7" fill="none" stroke="#D9A62E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      SANKHYA SETU
+    </div>
+    <button class="sb-close" onclick="toggleSidebar()">&times;</button>
+  </div>
+
+  <nav class="sb-nav">
+    <div class="sb-group-label">MAIN</div>
+    <a href="dashboard.html" class="sb-link"><span>🏠</span> Dashboard</a>
+    <a href="role.html" class="sb-link"><span>🎯</span> Role Diagnostic</a>
+    <a href="upload.html" class="sb-link"><span>📄</span> Upload Material</a>
+    <a href="progress.html" class="sb-link"><span>↗</span> Progress Tracker</a>
+    <a href="igot-courses.html" class="sb-link"><span>🏛️</span> iGOT Courses</a>
+
+    <div class="sb-group-label">LEARNING</div>
+    <a href="practice.html" class="sb-link"><span>📚</span> Matched Courses</a>
+
+    <div class="sb-group-label">ACCOUNT</div>
+    <a href="profile.html" class="sb-link"><span>👤</span> Profile Details</a>
+    <button class="sb-link sb-signout" onclick="signOut()"><span>🚪</span> Sign Out</button>
+  </nav>
+
+  <div class="sb-footer">
+    <div class="sb-user-name" id="sbUserName">User</div>
+    <div class="sb-user-role" id="sbUserRole">Statistical Service</div>
+  </div>
+</aside>
+
+<footer class="appfoot"></footer>
+
+<script src="app.js"></script>
+</body>
+</html>

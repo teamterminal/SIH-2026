@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Upload material — Sankhya Setu</title>
+<meta name="description" content="Sankhya Setu reads what your role needs, runs a short quiz to find your gaps, and routes you straight to the right course on iGOT Karmayogi.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+</head>
+<body data-screen="upload">
+
+<div class="bg-glow" aria-hidden="true"></div>
+
+  <div class="dash-corner-nav">
+    <button class="nav-hamburger" onclick="toggleSidebar()" aria-label="Open Menu">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 20 20"><rect x="1" y="1" width="18" height="18" rx="3" fill="none" stroke="#12181F" stroke-width="1.6"/><path d="M5 10.5l3 3 7-7" fill="none" stroke="#D9A62E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      SANKHYA SETU
+    </div>
+  </div>
+<div id="app">
+  <section class="screen active" id="screen-upload">
+    <div class="wrap">
+      <div class="tally"><div class="stroke on"></div><div class="stroke"></div><div class="stroke"></div><div class="stroke"></div></div>
+
+      <div id="upload-picker">
+        <h1>Upload material instead</h1>
+        <p class="lede">We'll read it and build a quiz from what's actually inside it.</p>
+
+        <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+          <div class="up-ic">↑</div>
+          <h3>Tap to choose a PDF</h3>
+          <p>or drag it in here</p>
+          <div class="fmt-row">
+            <span class="fmt-chip">PDF</span>
+          </div>
+          <input type="file" id="fileInput" accept="application/pdf" style="display:none;" onchange="filePicked(this)">
+        </div>
+
+        <div class="file-picked" id="filePicked">
+          <div class="fi">PDF</div>
+          <div>
+            <div class="fn" id="fileName">Survey_Methodology_Notes.pdf</div>
+            <div class="fs">Ready to scan</div>
+          </div>
+        </div>
+
+        <div class="field" style="margin-top:8px;">
+          <p class="errmsg" id="upload-file-error"></p>
+        </div>
+
+        <div class="spacer"></div>
+        <div class="stack">
+          <button class="btn btn-solid" id="upload-continue" onclick="uploadAndGenerateQuiz()" disabled>Generate my quiz</button>
+          <button class="btn-ghost" onclick="goScreen('role')" style="margin:0 auto;">&larr; Back to role selection</button>
+        </div>
+      </div>
+
+      <div id="upload-loading" style="display:none; text-align:center; padding-top:40px;">
+        <div class="spin-mark" id="uploadSpinMark"></div>
+        <h1 style="margin-top:0;">Reading your material…</h1>
+        <p class="lede" id="upload-loading-sub">Matching it against each skill your role requires. This checks several skills one at a time, so it can take a little while for longer documents.</p>
+      </div>
+
+      <div id="upload-error" style="display:none; text-align:center; padding-top:40px;">
+        <h1 style="margin-top:0;">Couldn't build a quiz from this</h1>
+        <p class="lede" id="upload-error-message"></p>
+        <div class="stack" style="margin-top:20px;">
+          <button class="btn btn-solid" onclick="resetUploadScreen()">Try a different file</button>
+          <button class="btn-ghost" onclick="goScreen('role')" style="margin:0 auto;">&larr; Back to role selection</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="profile-fab" id="profileFab" title="Your profile" style="display:none;">
+  <span id="fabInitials">--</span>
+  <img id="fabImg" style="display:none;" alt="">
+</div>
+
+<div class="demo-jump">
+  <div class="demo-menu" id="demoMenu">
+    <div class="lbl">Jump to screen (demo)</div>
+    <button onclick="jump('landing')">0 · Landing</button>
+    <button onclick="jump('login')">1 · Login</button>
+    <button onclick="jump('signup-1')">1b · Sign up</button>
+    <button onclick="jump('dashboard')">1c · Dashboard</button>
+    <button onclick="jump('role')">2 · Pick role</button>
+    <button onclick="jump('upload')">3 · Upload material</button>
+    <button onclick="jump('spin')">4 · Scoring</button>
+    <button onclick="jump('quiz')">5 · Quiz</button>
+    <button onclick="jump('results')">6 · Results</button>
+    <button onclick="jump('practice')">7 · Learn</button>
+    <button onclick="jump('progress')">8 · Progress</button>
+    <button onclick="jump('profile')">9 · Profile</button>
+    <button onclick="jump('igot-courses')">10 · iGOT Courses</button>
+  </div>
+  <button onclick="toggleDemoMenu()" aria-label="Jump to screen">::</button>
+</div>
+<div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
+<aside class="app-sidebar" id="appSidebar">
+  <div class="sb-header">
+    <div class="brand" style="justify-content:flex-start;">
+      <svg class="mark" viewBox="0 0 20 20"><rect x="1" y="1" width="18" height="18" rx="3" fill="none" stroke="#12181F" stroke-width="1.6"/><path d="M5 10.5l3 3 7-7" fill="none" stroke="#D9A62E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      SANKHYA SETU
+    </div>
+    <button class="sb-close" onclick="toggleSidebar()">&times;</button>
+  </div>
+
+  <nav class="sb-nav">
+    <div class="sb-group-label">MAIN</div>
+    <a href="dashboard.html" class="sb-link"><span>🏠</span> Dashboard</a>
+    <a href="role.html" class="sb-link"><span>🎯</span> Role Diagnostic</a>
+    <a href="upload.html" class="sb-link"><span>📄</span> Upload Material</a>
+    <a href="progress.html" class="sb-link"><span>↗</span> Progress Tracker</a>
+    <a href="igot-courses.html" class="sb-link"><span>🏛️</span> iGOT Courses</a>
+
+    <div class="sb-group-label">LEARNING</div>
+    <a href="practice.html" class="sb-link"><span>📚</span> Matched Courses</a>
+
+    <div class="sb-group-label">ACCOUNT</div>
+    <a href="profile.html" class="sb-link"><span>👤</span> Profile Details</a>
+    <button class="sb-link sb-signout" onclick="signOut()"><span>🚪</span> Sign Out</button>
+  </nav>
+
+  <div class="sb-footer">
+    <div class="sb-user-name" id="sbUserName">User</div>
+    <div class="sb-user-role" id="sbUserRole">Statistical Service</div>
+  </div>
+</aside>
+
+<footer class="appfoot"></footer>
+
+<script src="app.js"></script>
+</body>
+</html>

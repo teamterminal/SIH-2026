@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sankhya Setu — Learn only what your job needs</title>
+<meta name="description" content="Sankhya Setu reads what your role needs, runs a short quiz to find your gaps, and routes you straight to the right course on iGOT Karmayogi.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+</head>
+<body data-screen="landing">
+
+<div class="bg-glow" aria-hidden="true"></div>
+
+<div id="app">
+  <section class="screen active" id="screen-landing">
+    <div class="lp-landing">
+
+      <nav class="topbar">
+        <div class="shell">
+          <div class="lp-brand">
+            <svg class="mark" viewBox="0 0 20 20"><rect x="1" y="1" width="18" height="18" rx="3" fill="none" stroke="#12181F" stroke-width="1.6"/><path d="M5 10.5l3 3 7-7" fill="none" stroke="#D9A62E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            SANKHYA SETU
+          </div>
+          <div class="navlinks">
+            <a href="#how">How it works</a>
+            <a href="#gaps">Your gaps</a>
+            <a href="#courses">Courses</a>
+            <a href="#progress">Progress</a>
+          </div>
+          <div class="navcta">
+            <button class="signin" onclick="goScreen('login')">Sign in</button>
+            <button class="btn btn-solid" onclick="goScreen('login')">Get started</button>
+          </div>
+        </div>
+      </nav>
+
+      <main>
+
+        <header class="hero">
+          <div class="shell">
+            <div>
+              <h1 class="rise">Learn only what<br>your job needs.</h1>
+              <p class="lede rise" style="animation-delay:.08s;">Sankhya Setu reads what your role actually requires, runs a short quiz to find where you're behind, and routes you straight to the one course that fixes it — on iGOT Karmayogi.</p>
+              <div class="ctas rise" style="animation-delay:.16s;">
+                <button class="btn btn-solid" onclick="goScreen('login')">Get started</button>
+                <a class="btn btn-ghost" href="#how">See how it works</a>
+              </div>
+              <p class="fine mono rise" style="animation-delay:.22s;">NO 40-COURSE CATALOGUE — JUST THE ONES YOUR ROLE ACTUALLY NEEDS</p>
+            </div>
+
+            <div class="mock-stage rise" style="animation-delay:.1s;">
+              <div class="mock-card" id="heroMock">
+                <div class="mock-tab">SAMPLE RESULT</div>
+                <div class="mock-role">STATISTICAL OFFICER</div>
+                <div class="mock-h">Here's where you stand</div>
+                <div class="meter-wrap">
+                  <div class="meter-num mono" id="heroMeterNum">0%</div>
+                  <div class="meter-lab">Ready for your role</div>
+                  <div class="meter-track">
+                    <div class="meter-seg"><i data-w="60"></i></div>
+                    <div class="meter-seg"><i data-w="60"></i></div>
+                    <div class="meter-seg"><i data-w="60"></i></div>
+                    <div class="meter-seg"><i data-w="0"></i></div>
+                    <div class="meter-seg"><i data-w="0"></i></div>
+                  </div>
+                </div>
+                <div class="ledger-list">
+                  <div class="lrow"><span class="sq2" style="background:var(--brick);"></span><span class="lname">Sampling</span><span class="dots"></span><span class="lval">40%</span><span class="ltag mono">WEAK</span></div>
+                  <div class="lrow"><span class="sq2" style="background:var(--brick);"></span><span class="lname">Data Visualization</span><span class="dots"></span><span class="lval">45%</span><span class="ltag mono">WEAK</span></div>
+                  <div class="lrow"><span class="sq2" style="background:var(--amber);"></span><span class="lname">Data Quality</span><span class="dots"></span><span class="lval">60%</span><span class="ltag mono">FAIR</span></div>
+                  <div class="lrow"><span class="sq2" style="background:var(--teal);"></span><span class="lname">Survey Method</span><span class="dots"></span><span class="lval">70%</span><span class="ltag mono">SOLID</span></div>
+                </div>
+              </div>
+              <div class="stamp">✓ DIAGNOSTIC<br>COMPLETE</div>
+            </div>
+          </div>
+        </header>
+
+        <section id="how">
+          <div class="shell">
+            <div class="sec-head">
+              <h2>Four steps, no wasted time.</h2>
+              <p>Every step earns its place — there's nothing here to sit through just because a course says so.</p>
+            </div>
+            <div class="steps">
+              <div class="step">
+                <div class="idx mono">01</div>
+                <h3>Pick your role</h3>
+                <p>The platform reads what your position needs — Statistical Officer, DPO, or whatever your ministry calls it.</p>
+              </div>
+              <div class="step">
+                <div class="idx mono">02</div>
+                <h3>Take a 5-minute quiz</h3>
+                <p>Or upload training material you already have, and we build the quiz from what's actually inside it.</p>
+              </div>
+              <div class="step">
+                <div class="idx mono">03</div>
+                <h3>See your gaps, plainly</h3>
+                <p>No score out of a hundred hiding what's wrong. Each skill is marked weak, fair, or solid — and why.</p>
+              </div>
+              <div class="step">
+                <div class="idx mono">04</div>
+                <h3>Get matched learning</h3>
+                <p>Routed straight into the right course on iGOT Karmayogi. One at a time, biggest gap first.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="gaps">
+          <div class="shell">
+            <div class="gaps-grid">
+              <div class="copy">
+                <div class="sec-head" style="margin-bottom:0;">
+                  <h2>See your gaps, plainly.</h2>
+                </div>
+                <p>Most training platforms hand you a percentage and a certificate and call it a day. <strong>Sankhya Setu tells you which specific skill is weak, how weak, and what's already strong</strong> — in plain language, not a jargon-heavy report nobody reads.</p>
+                <p>Answers are checked by AI on more than whether you picked the right option — it looks at why you picked it, so a lucky guess doesn't read as a strength.</p>
+              </div>
+              <div class="full-ledger" id="gapsMock">
+                <div class="ledger-tab">SAMPLE RESULT</div>
+                <div class="plain-msg">
+                  <b>You're strongest in Statistical Analysis.</b>
+                  <span>Focus on Sampling and Data Visualization next — that's where the gap is biggest.</span>
+                </div>
+                <div class="ledger-list">
+                  <div class="lrow"><span class="sq2" style="background:var(--brick);"></span><span class="lname">Sampling</span><span class="dots"></span><span class="lval mono" data-target="40">0%</span><span class="ltag mono">NEEDS WORK</span></div>
+                  <div class="lrow"><span class="sq2" style="background:var(--brick);"></span><span class="lname">Data Visualization</span><span class="dots"></span><span class="lval mono" data-target="45">0%</span><span class="ltag mono">NEEDS WORK</span></div>
+                  <div class="lrow"><span class="sq2" style="background:var(--amber);"></span><span class="lname">Data Quality</span><span class="dots"></span><span class="lval mono" data-target="60">0%</span><span class="ltag mono">GETTING THERE</span></div>
+                  <div class="lrow"><span class="sq2" style="background:var(--teal);"></span><span class="lname">Survey Methodology</span><span class="dots"></span><span class="lval mono" data-target="70">0%</span><span class="ltag mono">SOLID</span></div>
+                  <div class="lrow"><span class="sq2" style="background:var(--teal);"></span><span class="lname">Statistical Analysis</span><span class="dots"></span><span class="lval mono" data-target="85">0%</span><span class="ltag mono">STRONG</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="paths">
+          <div class="shell">
+            <div class="sec-head">
+              <h2>Two ways to start</h2>
+              <p>Whichever route you take, you land in the same place — a clear map of what to learn next.</p>
+            </div>
+            <div class="paths">
+              <div class="path-card">
+                <div class="tag mono">QUICK QUIZ</div>
+                <h3>Take the quiz</h3>
+                <p>Pick your role and answer a short set of AI-checked questions built around what that role does day to day — not a generic aptitude test.</p>
+                <div class="role-sample">
+                  <span class="role-chip">Statistical Officer</span>
+                  <span class="role-chip">Data Analyst</span>
+                  <span class="role-chip">DPO</span>
+                  <span class="role-chip">Field Investigator</span>
+                </div>
+              </div>
+              <div class="path-card">
+                <div class="tag mono">YOUR OWN MATERIAL</div>
+                <h3>Upload what you've got</h3>
+                <p>Already have training material — a PDF, slide deck, or notes? Upload it and the quiz is built straight from what's actually inside it.</p>
+                <div class="fmt-row">
+                  <span class="fmt-chip">PDF</span>
+                  <span class="fmt-chip">PPT</span>
+                  <span class="fmt-chip">DOCX</span>
+                  <span class="fmt-chip">TXT</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="courses">
+          <div class="shell">
+            <div class="course-wrap">
+              <div>
+                <div class="sec-head" style="margin-bottom:0;">
+                  <h2>Matched learning, not a catalogue</h2>
+                </div>
+                <p style="margin-top:14px; font-size:14.5px; color:var(--slate); line-height:1.7;">Once your gaps are mapped, Sankhya Setu recommends <strong style="color:var(--ink);">one course at a time</strong>, starting with your biggest gap, and routes you straight into iGOT Karmayogi to take it. Not a hundred-item catalogue to scroll through — just the next right thing.</p>
+              </div>
+              <div class="full-ledger course-card">
+                <div class="num mono">01 / RECOMMENDED</div>
+                <h3>Foundations of Sampling Design</h3>
+                <p>4 short lessons · about 1 hour · on iGOT Karmayogi</p>
+                <span class="course-tag mono">FIXES: SAMPLING</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="progress">
+          <div class="shell">
+            <div class="sec-head">
+              <h2>Then it checks again.</h2>
+              <p>After you finish a course, Sankhya Setu quietly re-tests the same skill — so you see the actual movement, not just a completion tick.</p>
+            </div>
+            <div style="max-width:560px;">
+              <div class="compare-row">
+                <div class="cname">Sampling</div>
+                <div class="compare-vals">
+                  <span class="pill before">40%</span><span class="arrow">&rarr;</span><span class="pill after">65%</span>
+                </div>
+              </div>
+              <div class="compare-row">
+                <div class="cname">Data Visualization</div>
+                <div class="compare-vals">
+                  <span class="pill before">45%</span><span class="arrow">&rarr;</span><span class="pill same">48%</span>
+                </div>
+              </div>
+              <div class="badge-win">✓ SAMPLING MOVED FROM WEAK TO GOOD</div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+
+      <div class="cta-band">
+        <div class="shell">
+          <h2>Stop training on everything.<br>Start training on what your role needs.</h2>
+          <p>Pick your role, take the quiz, and see your first matched course in under five minutes.</p>
+          <div class="ctas">
+            <button class="btn btn-solid" onclick="goScreen('login')">Get started</button>
+          </div>
+        </div>
+      </div>
+
+      <footer class="lp-footer">
+        <div class="shell">
+          <div class="fbrand">
+            <div class="lp-brand">
+              <svg class="mark" viewBox="0 0 20 20"><rect x="1" y="1" width="18" height="18" rx="3" fill="none" stroke="#12181F" stroke-width="1.6"/><path d="M5 10.5l3 3 7-7" fill="none" stroke="#D9A62E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              SANKHYA SETU
+            </div>
+            <p>A role-based learning companion for government statistics teams, matched to iGOT Karmayogi.</p>
+          </div>
+          <div class="flinks">
+            <a href="#how">How it works</a>
+            <a href="#gaps">Your gaps</a>
+            <a href="#courses">Courses</a>
+            <button onclick="goScreen('login')">Sign in</button>
+          </div>
+        </div>
+      </footer>
+
+    </div>
+  </section>
+</div>
+
+<div class="profile-fab" id="profileFab" title="Your profile" style="display:none;">
+  <span id="fabInitials">--</span>
+  <img id="fabImg" style="display:none;" alt="">
+</div>
+
+<div class="demo-jump">
+  <div class="demo-menu" id="demoMenu">
+    <div class="lbl">Jump to screen (demo)</div>
+    <button onclick="jump('landing')">0 · Landing</button>
+    <button onclick="jump('login')">1 · Login</button>
+    <button onclick="jump('signup-1')">1b · Sign up</button>
+    <button onclick="jump('role')">2 · Pick role</button>
+    <button onclick="jump('upload')">3 · Upload material</button>
+    <button onclick="jump('spin')">4 · Scoring</button>
+    <button onclick="jump('quiz')">5 · Quiz</button>
+    <button onclick="jump('results')">6 · Results</button>
+    <button onclick="jump('practice')">7 · Learn</button>
+    <button onclick="jump('progress')">8 · Progress</button>
+    <button onclick="jump('profile')">9 · Profile</button>
+  </div>
+  <button onclick="toggleDemoMenu()" aria-label="Jump to screen">::</button>
+</div>
+
+<footer class="appfoot"></footer>
+
+<script src="app.js"></script>
+</body>
+</html>

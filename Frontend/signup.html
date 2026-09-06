@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create your account — Sankhya Setu</title>
+<meta name="description" content="Sankhya Setu reads what your role needs, runs a short quiz to find your gaps, and routes you straight to the right course on iGOT Karmayogi.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+</head>
+<body data-screen="signup-1">
+
+<div class="bg-glow" aria-hidden="true"></div>
+
+<div id="app">
+  <section class="screen active" id="screen-signup-1">
+    <div class="wrap">
+      <div class="brand">
+        <svg class="mark" viewBox="0 0 20 20"><rect x="1" y="1" width="18" height="18" rx="3" fill="none" stroke="#12181F" stroke-width="1.6"/><path d="M5 10.5l3 3 7-7" fill="none" stroke="#D9A62E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        SANKHYA SETU
+      </div>
+      <div class="tally">
+        <div class="stroke on" id="t1"></div><div class="stroke" id="t2"></div><div class="stroke" id="t3"></div><div class="stroke" id="t4"></div>
+      </div>
+      <h1>Create your account</h1>
+      <p class="lede">Let's get started — just a <i>few basic details</i>.</p>
+
+      <div class="ledger" style="margin-top:24px;">
+        <div class="ledger-tab">STEP 1 / 4</div>
+
+        <div class="field">
+          <label for="f-name">Full name</label>
+          <input type="text" id="f-name" placeholder="e.g. Priya Patel" autocomplete="name">
+          <div class="errmsg" id="err-name">Please enter your name.</div>
+        </div>
+
+        <div class="field">
+          <label for="f-email">Email address</label>
+          <input type="email" id="f-email" placeholder="you@gov.in" autocomplete="email">
+          <div class="errmsg" id="err-email">Enter a valid email address.</div>
+        </div>
+
+        <div class="field">
+          <label for="f-pass">Password</label>
+          <div class="pw-wrap">
+            <input type="password" id="f-pass" placeholder="Minimum 8 characters" autocomplete="new-password" oninput="checkPwStrength()">
+            <button type="button" class="pw-toggle mono" onclick="togglePw('f-pass', this)">SHOW</button>
+          </div>
+          <div class="pw-meter"><i id="pw1"></i><i id="pw2"></i><i id="pw3"></i></div>
+          <div class="errmsg" id="err-pass">Password should be at least 8 characters.</div>
+        </div>
+
+        <div class="field">
+          <label for="f-pass2">Confirm password</label>
+          <div class="pw-wrap">
+            <input type="password" id="f-pass2" placeholder="Re-enter password" autocomplete="new-password">
+            <button type="button" class="pw-toggle mono" onclick="togglePw('f-pass2', this)">SHOW</button>
+          </div>
+          <div class="errmsg" id="err-pass2">Passwords don't match.</div>
+        </div>
+      </div>
+
+      <div class="spacer"></div>
+      <div class="stack">
+        <button class="btn btn-solid" onclick="goStep(1)">Continue</button>
+        <p class="note">Already have an account? <a href="#" onclick="goScreen('login'); return false;" style="color:var(--ink); font-weight:700;">Sign in</a></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen" id="screen-signup-2">
+    <div class="wrap">
+      <div class="brand">
+        <svg class="mark" viewBox="0 0 20 20"><rect x="1" y="1" width="18" height="18" rx="3" fill="none" stroke="#12181F" stroke-width="1.6"/><path d="M5 10.5l3 3 7-7" fill="none" stroke="#D9A62E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        SANKHYA SETU
+      </div>
+      <div class="tally">
+        <div class="stroke done"></div><div class="stroke on" id="t2b"></div><div class="stroke" id="t3b"></div><div class="stroke" id="t4b"></div>
+      </div>
+      <h1>Your job profile</h1>
+      <p class="lede">This helps us match you with the <i>right content for your role</i>.</p>
+
+      <div class="ledger" style="margin-top:24px;">
+        <div class="ledger-tab">STEP 2 / 4</div>
+
+        <div class="field">
+          <label for="f-ministry">Ministry / Department</label>
+          <select id="f-ministry">
+            <option value="">Loading ministries…</option>
+          </select>
+          <div class="errmsg" id="err-ministry">Please select your ministry or department.</div>
+        </div>
+
+        <div class="field">
+          <label for="f-desig">Designation / Job role</label>
+          <select id="f-desig">
+            <option value="">Loading job roles…</option>
+          </select>
+          <div class="errmsg" id="err-desig">Please select your designation.</div>
+        </div>
+
+        <div class="field">
+          <label for="f-years">Years in current role</label>
+          <input type="number" id="f-years" min="0" max="50" placeholder="e.g. 3">
+          <div class="errmsg" id="err-years">Enter a number between 0 and 50.</div>
+        </div>
+      </div>
+
+      <div class="spacer"></div>
+      <div class="row2" style="margin-top:24px;">
+        <button class="btn" onclick="goStep(-1)">&larr; Back</button>
+        <button class="btn btn-solid" onclick="goStep(2)">Continue</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen" id="screen-signup-3">
+    <div class="wrap">
+      <div class="brand">
+        <svg class="mark" viewBox="0 0 20 20"><rect x="1" y="1" width="18" height="18" rx="3" fill="none" stroke="#12181F" stroke-width="1.6"/><path d="M5 10.5l3 3 7-7" fill="none" stroke="#D9A62E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        SANKHYA SETU
+      </div>
+      <div class="tally">
+        <div class="stroke done"></div><div class="stroke done"></div><div class="stroke on" id="t3c"></div><div class="stroke" id="t4c"></div>
+      </div>
+      <h1>Qualification of study</h1>
+      <p class="lede">Just so we know your <i>study background</i> — one time only.</p>
+
+      <div class="ledger" style="margin-top:24px;">
+        <div class="ledger-tab">STEP 3 / 4</div>
+
+        <div class="field">
+          <label for="f-qual">Highest qualification</label>
+          <select id="f-qual">
+            <option value="">Select one</option>
+            <option>Diploma</option>
+            <option>Bachelor's degree</option>
+            <option>Master's degree</option>
+            <option>M.Phil.</option>
+            <option>Doctorate (Ph.D.)</option>
+            <option>Other</option>
+          </select>
+          <div class="errmsg" id="err-qual">Please select your highest qualification.</div>
+        </div>
+
+        <div class="field">
+          <label for="f-field">Field of study</label>
+          <input type="text" id="f-field" placeholder="e.g. Statistics, Economics, Computer Science">
+          <div class="errmsg" id="err-field">Please enter your field of study.</div>
+        </div>
+      </div>
+
+      <div class="spacer"></div>
+      <div class="row2" style="margin-top:24px;">
+        <button class="btn" onclick="goStep(-1)">&larr; Back</button>
+        <button class="btn btn-solid" onclick="goStep(3)">Continue</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen" id="screen-signup-4">
+    <div class="wrap">
+      <div class="brand">
+        <svg class="mark" viewBox="0 0 20 20"><rect x="1" y="1" width="18" height="18" rx="3" fill="none" stroke="#12181F" stroke-width="1.6"/><path d="M5 10.5l3 3 7-7" fill="none" stroke="#D9A62E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        SANKHYA SETU
+      </div>
+      <div class="tally">
+        <div class="stroke done"></div><div class="stroke done"></div><div class="stroke done"></div><div class="stroke on" id="t4d"></div>
+      </div>
+      <h1>Courses on iGOT</h1>
+      <p class="lede">Have you already completed any courses on <i>iGOT Karmayogi</i>? Pick as many as apply.</p>
+
+      <div class="chip-grid" id="course-chips"></div>
+      <div class="chip-none">
+        <button class="btn-text" id="none-toggle" onclick="toggleNone()">I haven't completed any yet</button>
+      </div>
+
+      <div class="spacer"></div>
+      <div class="row2" style="margin-top:24px;">
+        <button class="btn" onclick="goStep(-1)">&larr; Back</button>
+        <button class="btn btn-solid" onclick="showReview()">Review &amp; continue</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen" id="screen-signup-review">
+    <div class="wrap">
+      <div class="brand">
+        <svg class="mark" viewBox="0 0 20 20"><rect x="1" y="1" width="18" height="18" rx="3" fill="none" stroke="#12181F" stroke-width="1.6"/><path d="M5 10.5l3 3 7-7" fill="none" stroke="#D9A62E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        SANKHYA SETU
+      </div>
+      <div class="tally">
+        <div class="stroke done"></div><div class="stroke done"></div><div class="stroke done"></div><div class="stroke done"></div>
+      </div>
+      <h1>Check &amp; confirm</h1>
+      <p class="lede">Take a quick look, then we'll create your account.</p>
+
+      <div class="ledger" style="margin-top:24px;" id="review-box">
+        <div class="ledger-tab">REVIEW</div>
+      </div>
+
+      <div class="spacer"></div>
+      <div class="row2" style="margin-top:24px;">
+        <button class="btn" onclick="goStep(-1)">&larr; Edit</button>
+        <button class="btn btn-solid" id="create-account-btn" onclick="createAccount()">Create account</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen" id="screen-signup-success">
+    <div class="wrap" style="justify-content:center; align-items:center; text-align:center;">
+      <div class="success-mark">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 12.5l5 5L20 6" stroke="#2E7D5B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <h1 style="margin-top:18px;">Your account is ready!</h1>
+      <p class="lede">Your account is ready, <span class="mono" id="thanks-name">there</span>. Let's get you matched to the right learning.</p>
+
+      <div class="stack" style="width:100%; max-width:320px; margin-top:30px;">
+        <button class="btn btn-solid" onclick="goScreen('dashboard')">Continue</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="profile-fab" id="profileFab" title="Your profile" style="display:none;">
+  <span id="fabInitials">--</span>
+  <img id="fabImg" style="display:none;" alt="">
+</div>
+
+<div class="demo-jump">
+  <div class="demo-menu" id="demoMenu">
+    <div class="lbl">Jump to screen (demo)</div>
+    <button onclick="jump('landing')">0 · Landing</button>
+    <button onclick="jump('login')">1 · Login</button>
+    <button onclick="jump('signup-1')">1b · Sign up</button>
+    <button onclick="jump('dashboard')">1c · Dashboard</button>
+    <button onclick="jump('role')">2 · Pick role</button>
+    <button onclick="jump('upload')">3 · Upload material</button>
+    <button onclick="jump('spin')">4 · Scoring</button>
+    <button onclick="jump('quiz')">5 · Quiz</button>
+    <button onclick="jump('results')">6 · Results</button>
+    <button onclick="jump('practice')">7 · Learn</button>
+    <button onclick="jump('progress')">8 · Progress</button>
+    <button onclick="jump('profile')">9 · Profile</button>
+  </div>
+  <button onclick="toggleDemoMenu()" aria-label="Jump to screen">::</button>
+</div>
+
+
+<footer class="appfoot"></footer>
+
+<script src="app.js"></script>
+</body>
+</html>
