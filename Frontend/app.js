@@ -998,7 +998,7 @@ async function loadIgotCourses() {
   });
 
   loadingEl.style.display = 'none';
-  listEl.style.display = 'flex';
+  listEl.style.display = 'grid';
 }
 
 
