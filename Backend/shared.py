@@ -83,6 +83,7 @@ def _call_groq(system_prompt: str, user_prompt: str) -> str:
         headers={
             "Authorization": f"Bearer {GROQ_API_KEY}",
             "Content-Type": "application/json",
+            "User-Agent": "SankhyaSetu/1.0",
         },
         method="POST",
     )
