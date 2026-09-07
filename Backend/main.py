@@ -43,6 +43,8 @@ from shared import (
     HF_MODEL_REPO_ID,
 )
 
+from Rag_quiz_generation import router as rag_router
+
 QUESTIONS_PER_QUIZ = 20
 
 app = FastAPI(title="Sankhya Setu Quiz Backend")
@@ -55,6 +57,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(rag_router)
 
 
 
