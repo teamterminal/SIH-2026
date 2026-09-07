@@ -32,6 +32,11 @@ SUPABASE_SERVICE_KEY = os.environ["SUPABASE_SERVICE_KEY"]
 
 HF_TOKEN = os.environ["HF_TOKEN"]
 
+HF_MODEL_REPO_ID = os.environ.get(
+    "HF_MODEL_REPO_ID",
+    "google/gemma-3-27b-it"
+)
+
 GROQ_API_KEY = os.environ["GROQ_API_KEY"]
 GROQ_MODEL = os.environ.get("GROQ_MODEL", "openai/gpt-oss-20b")
 
