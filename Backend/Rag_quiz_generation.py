@@ -35,13 +35,14 @@ New dependencies beyond main.py's (see requirements.txt):
 
 import io
 import logging
+import os
 
 from fastapi import APIRouter, UploadFile, Form, File, HTTPException
 from pydantic import BaseModel, Field
 
 from pypdf import PdfReader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEndpointEmbeddings
 from langchain_core.vectorstores import InMemoryVectorStore
 from langchain_core.documents import Document
 
@@ -56,7 +57,11 @@ MIN_CHUNK_CHARS = 200  # skip near-empty chunks (blank pages, headers-only, etc.
 # Loaded once at import time and reused across every request — loading
 # this fresh per request would be slow. Runs locally on CPU; consumes
 # no Hugging Face API quota, unlike the LLM calls below.
-_embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+_embeddings = HuggingFaceEndpointEmbeddings(
+    model="sentence-transformers/all-MiniLM-L6-v2",
+    task="feature-extraction",
+    huggingfacehub_api_token=os.environ["HF_TOKEN"],
+)
 
 
 # ============================================================
