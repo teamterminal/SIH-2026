@@ -257,26 +257,137 @@ Here is the study material:
         # -------------------------------------------------
 
         response = groq_client.chat.completions.create(
-            model=GROQ_MODEL,
-            messages=[
-                {
-                    "role": "system",
-                    "content": (
-                        "You generate compact educational study "
-                        "materials and return valid JSON only."
-                    )
+    model=GROQ_MODEL,
+    messages=[
+        {
+            "role": "user",
+            "content": user_prompt
+        }
+    ],
+    temperature=0.2,
+    max_completion_tokens=1500,
+    reasoning_effort="low",
+    include_reasoning=False,
+    response_format={
+        "type": "json_schema",
+        "json_schema": {
+            "name": "study_material",
+            "strict": True,
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "title": {
+                        "type": "string"
+                    },
+                    "summary": {
+                        "type": "string"
+                    },
+                    "notes": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "topic": {
+                                    "type": "string"
+                                },
+                                "points": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            },
+                            "required": [
+                                "topic",
+                                "points"
+                            ],
+                            "additionalProperties": False
+                        }
+                    },
+                    "mind_map": {
+                        "type": "object",
+                        "properties": {
+                            "root": {
+                                "type": "string"
+                            },
+                            "children": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "label": {
+                                            "type": "string"
+                                        },
+                                        "children": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "label": {
+                                                        "type": "string"
+                                                    },
+                                                    "children": {
+                                                        "type": "array",
+                                                        "items": {}
+                                                    }
+                                                },
+                                                "required": [
+                                                    "label",
+                                                    "children"
+                                                ],
+                                                "additionalProperties": False
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "label",
+                                        "children"
+                                    ],
+                                    "additionalProperties": False
+                                }
+                            }
+                        },
+                        "required": [
+                            "root",
+                            "children"
+                        ],
+                        "additionalProperties": False
+                    },
+                    "flowcharts": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "title": {
+                                    "type": "string"
+                                },
+                                "steps": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            },
+                            "required": [
+                                "title",
+                                "steps"
+                            ],
+                            "additionalProperties": False
+                        }
+                    }
                 },
-                {
-                    "role": "user",
-                    "content": user_prompt
-                }
-            ],
-            temperature=0.2,
-            max_completion_tokens=1500,
-            response_format={
-                "type": "json_object"
+                "required": [
+                    "title",
+                    "summary",
+                    "notes",
+                    "mind_map",
+                    "flowcharts"
+                ],
+                "additionalProperties": False
             }
-        )
+        }
+    }
+)
 
         # -------------------------------------------------
         # Extract response
