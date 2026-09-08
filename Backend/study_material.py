@@ -198,7 +198,7 @@ async def generate_study_material(
         # the request stays comfortably below 8K TPM.
         # -------------------------------------------------
 
-        MAX_INPUT_CHARS = 20000
+        MAX_INPUT_CHARS = 12000
 
         if len(text) > MAX_INPUT_CHARS:
             text = text[:MAX_INPUT_CHARS]
@@ -239,7 +239,7 @@ Here is the study material:
                 }
             ],
             temperature=0.2,
-            max_completion_tokens=1500,
+            max_completion_tokens=1000,
             response_format={
                 "type": "json_object"
             }
