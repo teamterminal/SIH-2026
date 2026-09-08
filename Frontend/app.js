@@ -27,7 +27,7 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLI
 
 // The Python/LangChain quiz-generation backend (main.py). Currently
 // only running locally — update this once it's actually deployed.
-const BACKEND_URL = 'https://backend-eta-two-91.vercel.app';
+const BACKEND_URL = 'http://127.0.0.1:8000';
 
 // ---------- cross-page navigation ----------
 // The signup wizard's 6 steps live in ONE file (signup.html), so any
@@ -61,7 +61,7 @@ function toggleSidebar() {
   if (bd) bd.classList.toggle('show');
 }
 function switchDashTab(tab) {
-  ['overview', 'results', 'progress'].forEach(t => {
+  ['overview', 'results', 'progress', 'study'].forEach(t => {
     const btn = document.getElementById('tab-' + t);
     const panel = document.getElementById('panel-' + t);
     if (btn) btn.classList.toggle('active', t === tab);
@@ -486,6 +486,323 @@ async function uploadAndGenerateQuiz() {
       err.message || 'Could not reach the quiz backend. Is it running?';
   }
 }
+
+// ============================================================
+// AI STUDY MATERIAL
+// PDF -> Notes + Mind Map + Flowcharts
+// ============================================================
+
+let selectedStudyMaterialFile = null;
+
+
+function handleStudyMaterialFile(input) {
+
+  const file = input.files && input.files[0];
+
+  const nameEl = document.getElementById('studyMaterialFileName');
+  const generateBtn = document.getElementById('studyMaterialGenerateBtn');
+  const errorEl = document.getElementById('studyMaterialError');
+
+  if (!file) return;
+
+  errorEl.style.display = 'none';
+
+  if (file.type !== 'application/pdf') {
+
+    selectedStudyMaterialFile = null;
+
+    nameEl.style.display = 'none';
+    generateBtn.style.display = 'none';
+
+    errorEl.textContent = 'Only PDF files are supported.';
+    errorEl.style.display = 'block';
+
+    return;
+  }
+
+  selectedStudyMaterialFile = file;
+
+  nameEl.textContent = file.name;
+  nameEl.style.display = 'block';
+
+  generateBtn.style.display = 'inline-block';
+}
+
+
+async function generateStudyMaterial() {
+
+  if (!selectedStudyMaterialFile) {
+    return;
+  }
+
+  const generateBtn =
+    document.getElementById('studyMaterialGenerateBtn');
+
+  const loadingEl =
+    document.getElementById('studyMaterialLoading');
+
+  const errorEl =
+    document.getElementById('studyMaterialError');
+
+  const resultEl =
+    document.getElementById('studyMaterialResult');
+
+  errorEl.style.display = 'none';
+  resultEl.style.display = 'none';
+
+  generateBtn.disabled = true;
+  generateBtn.textContent = 'Generating…';
+
+  loadingEl.style.display = 'block';
+
+  const formData = new FormData();
+
+  formData.append('file', selectedStudyMaterialFile);
+
+  try {
+
+    const res = await fetch(
+      BACKEND_URL + '/generate-study-material',
+      {
+        method: 'POST',
+        body: formData
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(
+        data.detail || 'Could not generate study material.'
+      );
+    }
+
+    renderStudyMaterial(data);
+
+    resultEl.style.display = 'block';
+
+    resultEl.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    });
+
+  } catch (err) {
+
+    console.error(
+      'generate-study-material failed:',
+      err
+    );
+
+    errorEl.textContent =
+      err.message ||
+      'Could not reach the study material backend.';
+
+    errorEl.style.display = 'block';
+
+  } finally {
+
+    loadingEl.style.display = 'none';
+
+    generateBtn.disabled = false;
+    generateBtn.textContent =
+      'Generate Study Material →';
+  }
+}
+
+
+function escapeStudyHtml(value) {
+
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+
+function renderStudyMaterial(data) {
+
+  // ---------- title + summary ----------
+
+  const titleEl =
+    document.getElementById('studyMaterialTitle');
+
+  const summaryEl =
+    document.getElementById('studyMaterialSummary');
+
+  titleEl.textContent =
+    data.title || 'Study Material';
+
+  summaryEl.textContent =
+    data.summary || '';
+
+
+  // ---------- notes ----------
+
+  const notesEl =
+    document.getElementById('studyMaterialNotes');
+
+  notesEl.innerHTML = '';
+
+  (data.notes || []).forEach(section => {
+
+    const card = document.createElement('div');
+
+    card.style.cssText = `
+      padding:14px;
+      border:1px solid var(--line);
+      border-radius:7px;
+      background:var(--card);
+    `;
+
+    const points = (section.points || [])
+      .map(point => `
+        <li style="
+          margin-top:6px;
+          line-height:1.55;
+          font-size:13px;
+          color:var(--slate);
+        ">
+          ${escapeStudyHtml(point)}
+        </li>
+      `)
+      .join('');
+
+    card.innerHTML = `
+      <strong style="
+        font-family:'Space Grotesk',sans-serif;
+        font-size:14px;
+      ">
+        ${escapeStudyHtml(section.topic)}
+      </strong>
+
+      <ul style="
+        margin:8px 0 0 18px;
+        padding:0;
+      ">
+        ${points}
+      </ul>
+    `;
+
+    notesEl.appendChild(card);
+  });
+
+
+  // ---------- mind map ----------
+
+const mindMapEl =
+  document.getElementById('studyMaterialMindMap');
+
+mindMapEl.innerHTML = '';
+
+if (data.mind_map) {
+
+  const canvas = document.createElement('div');
+  canvas.className = 'clean-mindmap';
+
+  // Root
+  const root = document.createElement('div');
+  root.className = 'clean-mindmap-root';
+  root.textContent =
+    data.mind_map.root || 'Main Topic';
+
+  canvas.appendChild(root);
+
+
+  // Main branches
+  const branches =
+    document.createElement('div');
+
+  branches.className =
+    'clean-mindmap-branches';
+
+
+  (data.mind_map.children || []).forEach(node => {
+
+    const branch =
+      document.createElement('div');
+
+    branch.className =
+      'clean-mindmap-branch';
+
+
+    // Major topic
+    const title =
+      document.createElement('div');
+
+    title.className =
+      'clean-mindmap-title';
+
+    title.textContent =
+      node.label || '';
+
+    branch.appendChild(title);
+
+
+    // Direct children
+    const children =
+      document.createElement('div');
+
+    children.className =
+      'clean-mindmap-items';
+
+
+    (node.children || []).forEach(child => {
+
+      const item =
+        document.createElement('div');
+
+      item.className =
+        'clean-mindmap-item';
+
+      item.textContent =
+        child.label || '';
+
+      children.appendChild(item);
+
+
+      // One additional level, shown as simple text
+      if (child.children && child.children.length) {
+
+        const sub =
+          document.createElement('div');
+
+        sub.className =
+          'clean-mindmap-subitems';
+
+        child.children.forEach(grandchild => {
+
+          const subItem =
+            document.createElement('span');
+
+          subItem.textContent =
+            grandchild.label || '';
+
+          sub.appendChild(subItem);
+
+        });
+
+        branch.appendChild(sub);
+      }
+
+    });
+
+    branch.appendChild(children);
+
+    branches.appendChild(branch);
+
+  });
+
+
+  canvas.appendChild(branches);
+
+  mindMapEl.appendChild(canvas);
+}
+}
+
+
+
 
 // ---- quiz flow entry point (called from role.html and progress.html) ----
 // upload.html handles its own file upload directly (see
