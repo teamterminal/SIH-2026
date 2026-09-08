@@ -1,16 +1,21 @@
-# Mistral study material generator
 import os
+import json
 import io
+
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from pydantic import BaseModel, Field
 from pypdf import PdfReader
-from mistralai.client import Mistral
+from groq import Groq
 from dotenv import load_dotenv
 
 load_dotenv()
 
 router = APIRouter()
 
+
+# =========================================================
+# OUTPUT SCHEMAS
+# =========================================================
 
 class NoteSection(BaseModel):
     topic: str
@@ -40,24 +45,32 @@ class StudyMaterialOutput(BaseModel):
     flowcharts: list[Flowchart]
 
 
-MISTRAL_API_KEY = os.environ.get("MISTRAL_API_KEY")
+# =========================================================
+# GROQ
+# =========================================================
 
-if not MISTRAL_API_KEY:
-    raise RuntimeError("MISTRAL_API_KEY is not configured.")
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 
-mistral_client = Mistral(api_key=MISTRAL_API_KEY)
+if not GROQ_API_KEY:
+    raise RuntimeError("GROQ_API_KEY is not configured.")
 
-MISTRAL_MODEL = os.environ.get(
-    "MISTRAL_MODEL",
-    "mistral-small-latest"
+groq_client = Groq(api_key=GROQ_API_KEY)
+
+GROQ_MODEL = os.environ.get(
+    "GROQ_MODEL",
+    "openai/gpt-oss-20b"
 )
 
+
+# =========================================================
+# PROMPT
+# =========================================================
 
 STUDY_MATERIAL_PROMPT = """
 You are an expert educational content generator.
 
-Analyze the supplied study material and convert it into a concise
-but useful study guide.
+Analyze the supplied study material and create a concise exam-revision
+study guide.
 
 STRICT RULES:
 
@@ -69,14 +82,16 @@ STRICT RULES:
 6. Organize notes by topic.
 7. Create a meaningful hierarchical mind map.
 8. Create flowcharts ONLY when the document contains a meaningful
-   process, sequence, workflow, procedure, algorithm, or
-   step-by-step process.
+   process, sequence, workflow, procedure, algorithm, or step-by-step
+   process.
 9. If there is no meaningful process, return an empty flowcharts array.
 10. Remove unnecessary repetition.
-11. Make the output useful for exam revision.
-12. Return ONLY valid JSON matching the requested structure.
+11. Keep the output compact.
+12. Return ONLY valid JSON.
+13. Do not use markdown.
+14. Do not put JSON inside ``` blocks.
 
-The required JSON structure is:
+Required JSON structure:
 
 {
   "title": "string",
@@ -106,13 +121,19 @@ The required JSON structure is:
 """
 
 
+# =========================================================
+# PDF EXTRACTION
+# =========================================================
+
 def extract_pdf_text(file_bytes: bytes) -> str:
     try:
         reader = PdfReader(io.BytesIO(file_bytes))
+
         pages = []
 
         for page in reader.pages:
             page_text = page.extract_text() or ""
+
             if page_text.strip():
                 pages.append(page_text)
 
@@ -125,6 +146,10 @@ def extract_pdf_text(file_bytes: bytes) -> str:
         )
 
 
+# =========================================================
+# STUDY MATERIAL GENERATION
+# =========================================================
+
 @router.post(
     "/generate-study-material",
     response_model=StudyMaterialOutput
@@ -132,6 +157,10 @@ def extract_pdf_text(file_bytes: bytes) -> str:
 async def generate_study_material(
     file: UploadFile = File(...)
 ):
+    # -----------------------------------------------------
+    # Validate file
+    # -----------------------------------------------------
+
     if file.content_type != "application/pdf":
         raise HTTPException(
             status_code=400,
@@ -147,6 +176,10 @@ async def generate_study_material(
         )
 
     try:
+        # -------------------------------------------------
+        # Extract PDF text
+        # -------------------------------------------------
+
         text = extract_pdf_text(file_bytes)
 
         if not text.strip():
@@ -155,52 +188,116 @@ async def generate_study_material(
                 detail="No readable text was found in the PDF."
             )
 
-        # Keep the same practical limit used by the previous version.
-        text = text[:50000]
+        # -------------------------------------------------
+        # IMPORTANT:
+        # Keep the input small enough for the free Groq
+        # token-per-minute limit.
+        #
+        # ~20,000 characters is roughly 5K input tokens.
+        # With a compact prompt + ~1.5K output tokens,
+        # the request stays comfortably below 8K TPM.
+        # -------------------------------------------------
+
+        MAX_INPUT_CHARS = 20000
+
+        if len(text) > MAX_INPUT_CHARS:
+            text = text[:MAX_INPUT_CHARS]
+
+        # -------------------------------------------------
+        # Build prompt
+        # -------------------------------------------------
 
         user_prompt = f"""
 {STUDY_MATERIAL_PROMPT}
 
-Here is the PDF content:
+Here is the study material:
 
---- START PDF CONTENT ---
+--- START DOCUMENT ---
 
 {text}
 
---- END PDF CONTENT ---
+--- END DOCUMENT ---
 """
 
-        response = mistral_client.chat.complete(
-            model=MISTRAL_MODEL,
+        # -------------------------------------------------
+        # Groq request
+        # -------------------------------------------------
+
+        response = groq_client.chat.completions.create(
+            model=GROQ_MODEL,
             messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You generate compact educational study "
+                        "materials and return valid JSON only."
+                    )
+                },
                 {
                     "role": "user",
                     "content": user_prompt
                 }
             ],
+            temperature=0.2,
+            max_completion_tokens=1500,
             response_format={
                 "type": "json_object"
-            },
-            temperature=0.3
+            }
         )
+
+        # -------------------------------------------------
+        # Extract response
+        # -------------------------------------------------
 
         result = response.choices[0].message.content
 
         if not result:
             raise HTTPException(
                 status_code=502,
-                detail="Mistral returned an empty response."
+                detail="Groq returned an empty response."
             )
 
-        return StudyMaterialOutput.model_validate_json(result)
+        # -------------------------------------------------
+        # Parse JSON
+        # -------------------------------------------------
+
+        try:
+            parsed = json.loads(result)
+
+        except json.JSONDecodeError as e:
+            print("Groq returned invalid JSON:")
+            print(result)
+
+            raise HTTPException(
+                status_code=502,
+                detail=f"Groq returned invalid JSON: {str(e)}"
+            )
+
+        # -------------------------------------------------
+        # Validate against schema
+        # -------------------------------------------------
+
+        return StudyMaterialOutput.model_validate(parsed)
 
     except HTTPException:
         raise
 
     except Exception as e:
-        print(f"Mistral study material error: {e}")
+        print(f"Groq study material error: {e}")
+
+        error_text = str(e)
+
+        # Friendly rate-limit message
+        if "429" in error_text or "rate limit" in error_text.lower():
+            raise HTTPException(
+                status_code=429,
+                detail=(
+                    "Groq rate limit reached. "
+                    "Please wait a short while and try again."
+                )
+            )
 
         raise HTTPException(
             status_code=502,
-            detail=f"Mistral API error: {str(e)}"
+            detail=f"Groq API error: {error_text}"
         )
