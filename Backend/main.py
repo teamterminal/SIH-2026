@@ -1,4 +1,3 @@
-
 """
 Sankhya Setu — quiz generation backend.
 
@@ -44,6 +43,7 @@ from shared import (
 )
 
 from Rag_quiz_generation import router as rag_router
+from study_material import router as study_material_router
 
 QUESTIONS_PER_QUIZ = 20
 
@@ -59,6 +59,7 @@ app.add_middleware(
 )
 
 app.include_router(rag_router)
+app.include_router(study_material_router)
 
 
 
