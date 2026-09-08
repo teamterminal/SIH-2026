@@ -1,3 +1,4 @@
+# Mistral study material generator
 import os
 import io
 from fastapi import APIRouter, UploadFile, File, HTTPException
