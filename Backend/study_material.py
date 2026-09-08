@@ -69,8 +69,11 @@ GROQ_MODEL = os.environ.get(
 STUDY_MATERIAL_PROMPT = """
 You are an expert educational content generator.
 
-Analyze the supplied study material and create a concise exam-revision
-study guide.
+Analyze the supplied study material and create a concise but genuinely
+useful exam-revision study guide.
+
+IMPORTANT:
+The notes must explain concepts, NOT simply list topic names.
 
 STRICT RULES:
 
@@ -78,28 +81,65 @@ STRICT RULES:
 2. Do not add outside knowledge.
 3. Do not invent facts.
 4. Preserve important terminology from the document.
-5. Create concise but useful revision notes.
-6. Organize notes by topic.
-7. Create a meaningful hierarchical mind map.
-8. Create flowcharts ONLY when the document contains a meaningful
-   process, sequence, workflow, procedure, algorithm, or step-by-step
-   process.
-9. If there is no meaningful process, return an empty flowcharts array.
-10. Remove unnecessary repetition.
-11. Keep the output compact.
-12. Return ONLY valid JSON.
-13. Do not use markdown.
-14. Do not put JSON inside ``` blocks.
+5. Organize the notes into meaningful topics.
+6. Each topic must contain short explanatory revision points.
+7. NEVER use a topic name alone as a point.
+8. Each point should explain, define, describe, compare, or clarify
+   something from the document.
+9. Keep individual points short: preferably 1-2 sentences.
+10. Avoid long paragraphs.
+11. Prefer 3-5 useful points per topic rather than many tiny labels.
+12. Do not repeat the topic name as a point.
+13. Include important definitions, characteristics, classifications,
+    formulas, rules, examples, and relationships when they appear
+    in the document.
+14. Remove unnecessary repetition.
+15. Make the notes useful for someone revising before an exam.
+16. Create a meaningful hierarchical mind map.
+17. Create flowcharts ONLY when the document contains a meaningful
+    process, sequence, workflow, procedure, algorithm, or
+    step-by-step process.
+18. If there is no meaningful process, return an empty flowcharts array.
+19. Keep the entire response concise.
+20. Return ONLY valid JSON.
+21. Do not use markdown.
+22. Do not put JSON inside ``` blocks.
+
+GOOD NOTE:
+
+Topic: Measures of Central Tendency
+
+Points:
+- Mean is calculated by dividing the sum of all observations by
+  the number of observations.
+- Median represents the middle value when observations are arranged
+  in an appropriate order.
+- Mode identifies the value or category that occurs most frequently.
+
+BAD NOTE:
+
+Topic: Measures of Central Tendency
+
+Points:
+- Mean
+- Median
+- Mode
+- Choosing Appropriate Measure
+
+The BAD example is not acceptable because the points are only labels.
 
 Required JSON structure:
 
 {
   "title": "string",
-  "summary": "string",
+  "summary": "2-4 concise sentences",
   "notes": [
     {
       "topic": "string",
-      "points": ["string"]
+      "points": [
+        "short explanatory point",
+        "short explanatory point"
+      ]
     }
   ],
   "mind_map": {
@@ -239,7 +279,7 @@ Here is the study material:
                 }
             ],
             temperature=0.2,
-            max_completion_tokens=1000,
+            max_completion_tokens=1300,
             response_format={
                 "type": "json_object"
             }
