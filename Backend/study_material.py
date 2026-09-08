@@ -38,11 +38,13 @@ class Flowchart(BaseModel):
 
 
 class StudyMaterialOutput(BaseModel):
-    title: str
-    summary: str
-    notes: list[NoteSection]
-    mind_map: MindMap
-    flowcharts: list[Flowchart]
+    title: str = ""
+    summary: str = ""
+    notes: list[NoteSection] = Field(default_factory=list)
+    mind_map: MindMap = Field(
+        default_factory=lambda: MindMap(root="")
+    )
+    flowcharts: list[Flowchart] = Field(default_factory=list)
 
 
 # =========================================================
@@ -67,75 +69,61 @@ GROQ_MODEL = os.environ.get(
 # =========================================================
 
 STUDY_MATERIAL_PROMPT = """
-You are an expert educational content generator.
+Create a compact exam-revision study guide from the document below.
 
-Analyze the supplied study material and create a concise but genuinely
-useful exam-revision study guide.
+SOURCE RULE:
+Use ONLY information present in the document.
+Do not add outside facts or knowledge.
 
 IMPORTANT:
-The notes must explain concepts, NOT simply list topic names.
+The notes must EXPLAIN concepts.
+Do not simply list topic names.
 
-STRICT RULES:
+NOTES:
+- Select the 6-8 most important topics.
+- Each topic must have exactly 2-3 short explanatory points.
+- Each point should normally be one sentence.
+- Keep each point under approximately 20 words.
+- Include definitions, key concepts, classifications, formulas,
+  rules, examples, and relationships when present in the document.
+- Never use a topic name alone as a point.
 
-1. Use ONLY information contained in the supplied document.
-2. Do not add outside knowledge.
-3. Do not invent facts.
-4. Preserve important terminology from the document.
-5. Organize the notes into meaningful topics.
-6. Each topic must contain short explanatory revision points.
-7. NEVER use a topic name alone as a point.
-8. Each point should explain, define, describe, compare, or clarify
-   something from the document.
-9. Keep individual points short: preferably 1-2 sentences.
-10. Avoid long paragraphs.
-11. Prefer 3-5 useful points per topic rather than many tiny labels.
-12. Do not repeat the topic name as a point.
-13. Include important definitions, characteristics, classifications,
-    formulas, rules, examples, and relationships when they appear
-    in the document.
-14. Remove unnecessary repetition.
-15. Make the notes useful for someone revising before an exam.
-16. Create a meaningful hierarchical mind map.
-17. Create flowcharts ONLY when the document contains a meaningful
-    process, sequence, workflow, procedure, algorithm, or
-    step-by-step process.
-18. If there is no meaningful process, return an empty flowcharts array.
-19. Keep the entire response concise.
-20. Return ONLY valid JSON.
-21. Do not use markdown.
-22. Do not put JSON inside ``` blocks.
+SUMMARY:
+Write 2-4 short sentences summarizing the most important ideas.
 
-GOOD NOTE:
+MIND MAP:
+Create a simple hierarchical mind map.
+Use the main subject as the root.
+Use important topics as children.
+Use smaller concepts as grandchildren when useful.
 
-Topic: Measures of Central Tendency
+FLOWCHARTS:
+Only create a flowchart if the document contains a real process,
+procedure, sequence, workflow, or algorithm.
+Otherwise return an empty array.
 
-Points:
-- Mean is calculated by dividing the sum of all observations by
-  the number of observations.
-- Median represents the middle value when observations are arranged
-  in an appropriate order.
-- Mode identifies the value or category that occurs most frequently.
+OUTPUT:
+Return ONLY one valid JSON object.
+Do not use markdown.
+Do not use ``` blocks.
+Do not add explanations before or after the JSON.
 
-BAD NOTE:
+The JSON object MUST have EXACTLY these top-level keys:
 
-Topic: Measures of Central Tendency
+"title"
+"summary"
+"notes"
+"mind_map"
+"flowcharts"
 
-Points:
-- Mean
-- Median
-- Mode
-- Choosing Appropriate Measure
-
-The BAD example is not acceptable because the points are only labels.
-
-Required JSON structure:
+The structure MUST be:
 
 {
-  "title": "string",
-  "summary": "2-4 concise sentences",
+  "title": "short title",
+  "summary": "2-4 sentence summary",
   "notes": [
     {
-      "topic": "string",
+      "topic": "topic name",
       "points": [
         "short explanatory point",
         "short explanatory point"
@@ -143,21 +131,26 @@ Required JSON structure:
     }
   ],
   "mind_map": {
-    "root": "string",
+    "root": "main subject",
     "children": [
       {
-        "label": "string",
-        "children": []
+        "label": "important topic",
+        "children": [
+          {
+            "label": "important sub-concept",
+            "children": []
+          }
+        ]
       }
     ]
   },
-  "flowcharts": [
-    {
-      "title": "string",
-      "steps": ["string"]
-    }
-  ]
+  "flowcharts": []
 }
+
+IMPORTANT:
+Always include ALL FIVE top-level keys.
+Even when there are no flowcharts, output:
+"flowcharts": []
 """
 
 
