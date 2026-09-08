@@ -398,7 +398,7 @@ async def generate_study_material(
         # Give the rate-limit window some breathing room
         # between requests.
         if index < len(chunks):
-            time.sleep(12)
+            time.sleep(60)
 
     # --------------------------------------------------------
     # Final synthesis
