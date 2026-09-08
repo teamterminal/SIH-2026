@@ -1,5 +1,5 @@
 import os
-
+import io
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from pydantic import BaseModel, Field
 from pypdf import PdfReader
@@ -107,7 +107,7 @@ The required JSON structure is:
 
 def extract_pdf_text(file_bytes: bytes) -> str:
     try:
-        reader = PdfReader(file_bytes)
+        reader = PdfReader(io.BytesIO(file_bytes))
         pages = []
 
         for page in reader.pages:
