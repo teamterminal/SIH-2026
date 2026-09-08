@@ -2,8 +2,8 @@ import os
 
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from pydantic import BaseModel, Field
-from google import genai
-from google.genai import types
+from pypdf import PdfReader
+from mistralai.client import Mistral
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -39,42 +39,89 @@ class StudyMaterialOutput(BaseModel):
     flowcharts: list[Flowchart]
 
 
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+MISTRAL_API_KEY = os.environ.get("MISTRAL_API_KEY")
 
-if not GEMINI_API_KEY:
-    raise RuntimeError("GEMINI_API_KEY is not configured.")
+if not MISTRAL_API_KEY:
+    raise RuntimeError("MISTRAL_API_KEY is not configured.")
 
-gemini_client = genai.Client(api_key=GEMINI_API_KEY)
+mistral_client = Mistral(api_key=MISTRAL_API_KEY)
 
-GEMINI_MODEL = os.environ.get(
-    "GEMINI_MODEL",
-    "gemini-3.7-flash"
+MISTRAL_MODEL = os.environ.get(
+    "MISTRAL_MODEL",
+    "mistral-small-latest"
 )
 
 
 STUDY_MATERIAL_PROMPT = """
 You are an expert educational content generator.
 
-Analyze the supplied PDF and convert it into a concise study guide.
+Analyze the supplied study material and convert it into a concise
+but useful study guide.
 
 STRICT RULES:
 
-1. Use ONLY information contained in the supplied PDF.
+1. Use ONLY information contained in the supplied document.
 2. Do not add outside knowledge.
 3. Do not invent facts.
 4. Preserve important terminology from the document.
 5. Create concise but useful revision notes.
 6. Organize notes by topic.
 7. Create a meaningful hierarchical mind map.
-8. Create flowcharts ONLY when the document contains a
-   meaningful process, sequence, workflow, procedure,
-   algorithm, or step-by-step process.
-9. If there is no meaningful process, return an empty
-   flowcharts array.
+8. Create flowcharts ONLY when the document contains a meaningful
+   process, sequence, workflow, procedure, algorithm, or
+   step-by-step process.
+9. If there is no meaningful process, return an empty flowcharts array.
 10. Remove unnecessary repetition.
 11. Make the output useful for exam revision.
-12. Return structured JSON matching the provided schema.
+12. Return ONLY valid JSON matching the requested structure.
+
+The required JSON structure is:
+
+{
+  "title": "string",
+  "summary": "string",
+  "notes": [
+    {
+      "topic": "string",
+      "points": ["string"]
+    }
+  ],
+  "mind_map": {
+    "root": "string",
+    "children": [
+      {
+        "label": "string",
+        "children": []
+      }
+    ]
+  },
+  "flowcharts": [
+    {
+      "title": "string",
+      "steps": ["string"]
+    }
+  ]
+}
 """
+
+
+def extract_pdf_text(file_bytes: bytes) -> str:
+    try:
+        reader = PdfReader(file_bytes)
+        pages = []
+
+        for page in reader.pages:
+            page_text = page.extract_text() or ""
+            if page_text.strip():
+                pages.append(page_text)
+
+        return "\n\n".join(pages)
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Could not read PDF: {str(e)}"
+        )
 
 
 @router.post(
@@ -99,41 +146,60 @@ async def generate_study_material(
         )
 
     try:
-        pdf_part = types.Part.from_bytes(
-            data=file_bytes,
-            mime_type="application/pdf"
-        )
+        text = extract_pdf_text(file_bytes)
 
-        response = gemini_client.models.generate_content(
-            model=GEMINI_MODEL,
-            contents=[
-                STUDY_MATERIAL_PROMPT,
-                pdf_part
-            ],
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=StudyMaterialOutput,
-                temperature=0.3
+        if not text.strip():
+            raise HTTPException(
+                status_code=400,
+                detail="No readable text was found in the PDF."
             )
+
+        # Keep the same practical limit used by the previous version.
+        text = text[:50000]
+
+        user_prompt = f"""
+{STUDY_MATERIAL_PROMPT}
+
+Here is the PDF content:
+
+--- START PDF CONTENT ---
+
+{text}
+
+--- END PDF CONTENT ---
+"""
+
+        response = mistral_client.chat.complete(
+            model=MISTRAL_MODEL,
+            messages=[
+                {
+                    "role": "user",
+                    "content": user_prompt
+                }
+            ],
+            response_format={
+                "type": "json_object"
+            },
+            temperature=0.3
         )
 
-        if not response.text:
+        result = response.choices[0].message.content
+
+        if not result:
             raise HTTPException(
                 status_code=502,
-                detail="Gemini returned an empty response."
+                detail="Mistral returned an empty response."
             )
 
-        return StudyMaterialOutput.model_validate_json(
-            response.text
-        )
+        return StudyMaterialOutput.model_validate_json(result)
 
     except HTTPException:
         raise
 
     except Exception as e:
-        print(f"Gemini study material error: {e}")
+        print(f"Mistral study material error: {e}")
 
         raise HTTPException(
             status_code=502,
-            detail=f"Gemini API error: {str(e)}"
+            detail=f"Mistral API error: {str(e)}"
         )
