@@ -53,7 +53,7 @@
       </div>
 
       <!-- Interactive Rectangular Tabs -->
-      <div class="interactive-tabs" style="grid-template-columns: repeat(4, 1fr);">
+      <div class="interactive-tabs" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));">
         <button type="button" class="tab-card-btn active" id="tab-overview" onclick="switchDashTab('overview')">
           <span class="tab-card-badge">STATUS</span>
           <span class="tab-card-title">Overview</span>
@@ -73,6 +73,11 @@
           <span class="tab-card-badge">TRACKING</span>
           <span class="tab-card-title">Progress</span>
           <span class="tab-card-sub">Growth & re-tests</span>
+        </button>
+        <button type="button" class="tab-card-btn" id="tab-study" onclick="switchDashTab('study')">
+          <span class="tab-card-badge">AI LEARNING</span>
+          <span class="tab-card-title">Study Material</span>
+          <span class="tab-card-sub">Notes, maps & flowcharts</span>
         </button>
       </div>
 
@@ -503,6 +508,225 @@
         </div>
 
       </div>
+
+      <!-- ================= TAB 4: AI STUDY MATERIAL ================= -->
+<div class="dash-panel" id="panel-study" style="display:none;">
+
+  <div class="ov-card" style="margin-top:20px;">
+
+    <div class="ov-card-header">
+      <div>
+        <div class="ov-label">AI LEARNING WORKSPACE</div>
+        <h3>Turn your material into a study guide</h3>
+      </div>
+
+      <span class="ov-card-tag">AI POWERED</span>
+    </div>
+
+    <p style="font-size:13px; color:var(--slate); line-height:1.6; margin-top:8px;">
+      Upload a PDF and Sankhya Setu will create concise revision notes,
+      a visual mind map, and flowcharts for important processes.
+    </p>
+
+    <!-- Upload -->
+    <div style="
+      margin-top:18px;
+      padding:24px;
+      border:1px dashed var(--line);
+      border-radius:8px;
+      background:var(--card);
+      text-align:center;
+    ">
+
+      <div style="font-size:32px;">📄</div>
+
+      <h4 style="
+        margin-top:8px;
+        font-family:'Space Grotesk',sans-serif;
+        font-size:16px;
+      ">
+        Upload your study material
+      </h4>
+
+      <p style="
+        font-size:12px;
+        color:var(--slate);
+        margin-top:5px;
+      ">
+        PDF files only
+      </p>
+
+      <input
+        type="file"
+        id="studyMaterialFile"
+        accept="application/pdf,.pdf"
+        style="display:none;"
+        onchange="handleStudyMaterialFile(this)"
+      >
+
+      <button
+        type="button"
+        class="btn btn-solid"
+        style="margin-top:14px;"
+        onclick="document.getElementById('studyMaterialFile').click()"
+      >
+        Choose PDF
+      </button>
+
+      <div
+        id="studyMaterialFileName"
+        style="
+          display:none;
+          margin-top:10px;
+          font-size:12px;
+          font-family:'IBM Plex Mono',monospace;
+          color:var(--teal);
+        "
+      ></div>
+
+      <button
+        type="button"
+        id="studyMaterialGenerateBtn"
+        class="btn btn-amber"
+        style="margin-top:12px; display:none;"
+        onclick="generateStudyMaterial()"
+      >
+        Generate Study Material →
+      </button>
+
+      <div
+        id="studyMaterialError"
+        style="
+          display:none;
+          margin-top:12px;
+          color:var(--brick);
+          font-size:12px;
+        "
+      ></div>
+
+      <div
+        id="studyMaterialLoading"
+        style="
+          display:none;
+          margin-top:14px;
+          font-size:12px;
+          color:var(--slate);
+          font-family:'IBM Plex Mono',monospace;
+        "
+      >
+        ANALYSING YOUR MATERIAL…
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- Generated material -->
+  <div id="studyMaterialResult" style="display:none; margin-top:18px;">
+
+    <!-- Summary -->
+    <div class="ov-card">
+
+      <div class="ov-label">OVERVIEW</div>
+
+      <h3 id="studyMaterialTitle" style="margin-top:5px;">
+        —
+      </h3>
+
+      <p
+        id="studyMaterialSummary"
+        style="
+          font-size:13px;
+          line-height:1.7;
+          color:var(--slate);
+          margin-top:8px;
+        "
+      ></p>
+
+    </div>
+
+
+    <!-- Notes -->
+    <div class="ov-card" style="margin-top:18px;">
+
+      <div class="ov-card-header">
+        <div>
+          <div class="ov-label">REVISION NOTES</div>
+          <h3>Short Notes</h3>
+        </div>
+
+        <span class="ov-card-tag">QUICK REVIEW</span>
+      </div>
+
+      <div
+        id="studyMaterialNotes"
+        style="
+          margin-top:14px;
+          display:flex;
+          flex-direction:column;
+          gap:12px;
+        "
+      ></div>
+
+    </div>
+
+
+    <!-- Mind Map -->
+    <div class="ov-card" style="margin-top:18px;">
+
+      <div class="ov-card-header">
+        <div>
+          <div class="ov-label">CONCEPT STRUCTURE</div>
+          <h3>Mind Map</h3>
+        </div>
+
+        <span class="ov-card-tag">VISUAL</span>
+      </div>
+
+      <div
+        id="studyMaterialMindMap"
+        style="
+          margin-top:18px;
+          overflow-x:auto;
+          padding:8px 4px 14px;
+        "
+      ></div>
+
+    </div>
+
+
+    <!-- Flowcharts -->
+    <div
+      id="studyMaterialFlowchartsSection"
+      class="ov-card"
+      style="margin-top:18px; display:none;"
+    >
+
+      <div class="ov-card-header">
+        <div>
+          <div class="ov-label">PROCESS VISUALISATION</div>
+          <h3>Flowcharts</h3>
+        </div>
+
+        <span class="ov-card-tag">STEP BY STEP</span>
+      </div>
+
+      <div
+        id="studyMaterialFlowcharts"
+        style="
+          margin-top:16px;
+          display:flex;
+          flex-direction:column;
+          gap:18px;
+        "
+      ></div>
+
+    </div>
+
+  </div>
+
+</div>
 
       <!-- ================= TAB 3: PROGRESS ================= -->
       <div class="dash-panel" id="panel-progress" style="display:none;">
