@@ -311,7 +311,7 @@
   .lp-landing main, .lp-landing header, .lp-landing footer, .lp-landing nav{ position:relative; z-index:1; }
   .lp-landing .shell{ max-width:1120px; margin:0 auto; padding:0 28px; }
   .compass-hero-logo{
-  width:420px;
+  width:600px;
   max-width:100%;
   height:auto;
   margin-bottom:28px;
