@@ -56,36 +56,36 @@ def _extract_json_block(text: str) -> str:
 
 
 def _call_groq(system_prompt: str, user_prompt: str) -> str:
-        """Call Groq's OpenAI-compatible chat completion API."""
-        payload = {
-            "model": GROQ_MODEL,
-            "messages": [
-                {
-                    "role": "system",
-                    "content": system_prompt,
-                },
-                {
-                    "role": "user",
-                    "content": user_prompt,
-                },
-            ],
-            "temperature": 0.4,
-            "max_completion_tokens": 3000,
-            "response_format": {
-                "type": "json_object"
+    """Call Groq's OpenAI-compatible chat completion API."""
+    payload = {
+        "model": GROQ_MODEL,
+        "messages": [
+            {
+                "role": "system",
+                "content": system_prompt,
             },
-        }
-    
-        request = urllib.request.Request(
-            "https://api.groq.com/openai/v1/chat/completions",
-            data=json.dumps(payload).encode("utf-8"),
-            headers={
-                "Authorization": f"Bearer {GROQ_API_KEY}",
-                "Content-Type": "application/json",
-                "User-Agent": "SankhyaSetu/1.0",
+            {
+                "role": "user",
+                "content": user_prompt,
             },
-            method="POST",
-        )
+        ],
+        "temperature": 0.4,
+        "max_completion_tokens": 3000,
+        "response_format": {
+            "type": "json_object"
+        },
+    }
+
+    request = urllib.request.Request(
+        "https://api.groq.com/openai/v1/chat/completions",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Authorization": f"Bearer {GROQ_API_KEY}",
+            "Content-Type": "application/json",
+            "User-Agent": "SankhyaSetu/1.0",
+        },
+        method="POST",
+    )
 
     try:
         with urllib.request.urlopen(request, timeout=120) as response:
@@ -95,7 +95,6 @@ def _call_groq(system_prompt: str, user_prompt: str) -> str:
 
     except urllib.error.HTTPError as e:
         error_body = e.read().decode("utf-8", errors="replace")
-
         logger.error(
             "Groq API error %s: %s",
             e.code,
@@ -114,8 +113,7 @@ def _call_groq(system_prompt: str, user_prompt: str) -> str:
             status_code=502,
             detail=f"Groq request failed: {str(e)}",
         )
-
-
+        
 def call_llm_for_json(
     system_prompt: str,
     user_prompt: str,
