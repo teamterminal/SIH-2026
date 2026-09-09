@@ -170,11 +170,15 @@ def generate_quiz(req: GenerateQuizRequest):
     quiz: QuizLLMOutput = call_llm_for_json(q_system, q_user, QuizLLMOutput)
 
     valid_questions = [
-        q for q in quiz.questions
-        if q.skill in skill_name_to_id and q.correct_option in q.options
+    q for q in quiz.questions
+    if q.skill in skill_name_to_id and q.correct_option in q.options
     ]
-    if not valid_questions:
-        raise HTTPException(status_code=502, detail="The model didn't return any usable questions")
+
+    if len(valid_questions) < QUESTIONS_PER_QUIZ:
+        raise HTTPException(
+            status_code=502,
+            detail=f"The model returned only {len(valid_questions)} usable questions. Expected {QUESTIONS_PER_QUIZ}."
+        )
 
     attempt = (
         supabase.table("quiz_attempts")
