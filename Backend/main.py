@@ -1,5 +1,5 @@
 """
-COMPASS — quiz generation backend.
+Sankhya Setu — quiz generation backend.
 
 Endpoints, called from the website:
 
