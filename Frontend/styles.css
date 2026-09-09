@@ -2735,3 +2735,15 @@
     padding: 22px !important;
   }
 }
+
+.login-logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+.login-logo img {
+  width: 280px;
+  max-width: 80%;
+  height: auto;
+}
