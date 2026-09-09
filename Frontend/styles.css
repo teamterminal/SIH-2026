@@ -2576,3 +2576,156 @@
   .competency-card-side{ min-width:66px; }
   .competency-score{ font-size:19px; }
 }
+
+/* ============================================================
+   RESULTS PAGE SCALE-UP
+   Uses the wider dashboard-style layout on desktop
+   ============================================================ */
+
+@media (min-width: 900px) {
+
+  /* Wider results page */
+  body[data-screen="results"] .wrap {
+    max-width: 900px;
+    padding-left: 28px;
+    padding-right: 28px;
+  }
+
+  /* Page heading */
+  body[data-screen="results"] h1 {
+    font-size: 34px;
+    margin-top: 8px;
+  }
+
+  body[data-screen="results"] .lede {
+    font-size: 15px;
+  }
+
+  body[data-screen="results"] .eyebrow {
+    font-size: 11px;
+  }
+
+  /* Readiness percentage */
+  body[data-screen="results"] .meter-wrap {
+    margin-top: 26px;
+  }
+
+  body[data-screen="results"] .meter-num {
+    font-size: 54px;
+  }
+
+  body[data-screen="results"] .meter-lab {
+    font-size: 12px;
+  }
+
+  body[data-screen="results"] .meter-track {
+    gap: 8px;
+    margin-top: 20px;
+  }
+
+  body[data-screen="results"] .meter-seg {
+    height: 20px;
+  }
+
+  /* AI summary */
+  body[data-screen="results"] #results-message {
+    margin-top: 24px !important;
+    padding: 22px 24px;
+  }
+
+  body[data-screen="results"] #results-message b {
+    font-size: 18px;
+  }
+
+  body[data-screen="results"] #results-message span {
+    font-size: 14px;
+  }
+
+  /* Accuracy / Completions / Streak cards */
+  body[data-screen="results"] .wrap > div[style*="repeat(auto-fit"] {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 16px !important;
+    margin-top: 26px !important;
+  }
+
+  body[data-screen="results"] .wrap > div[style*="repeat(auto-fit"] .ledger {
+    min-height: 175px;
+    padding: 20px !important;
+  }
+
+  body[data-screen="results"] .wrap > div[style*="repeat(auto-fit"] .ledger-tab {
+    font-size: 10px;
+    padding: 4px 9px;
+  }
+
+  body[data-screen="results"] #card-acc-score,
+  body[data-screen="results"] #card-completions-count,
+  body[data-screen="results"] #card-streak-days {
+    font-size: 30px !important;
+  }
+
+  /* Recommended pathways */
+  body[data-screen="results"] .wrap > .ledger[style*="border:1px solid var(--gold"] {
+    margin-top: 22px !important;
+    padding: 26px !important;
+  }
+
+  body[data-screen="results"] .wrap > .ledger[style*="border:1px solid var(--gold"] h3 {
+    font-size: 21px !important;
+  }
+
+  body[data-screen="results"] .wrap > .ledger[style*="border:1px solid var(--gold"] p {
+    font-size: 14px !important;
+    max-width: 700px;
+  }
+
+  /* Skill breakdown */
+  body[data-screen="results"] .wrap > .eyebrow[style*="text-align:left"] {
+    margin-top: 30px !important;
+  }
+
+  body[data-screen="results"] #results-list {
+    margin-top: 14px !important;
+  }
+
+  body[data-screen="results"] #results-list .lrow {
+    padding: 14px 4px;
+  }
+
+  body[data-screen="results"] #results-list .lname {
+    font-size: 14px;
+  }
+
+  body[data-screen="results"] #results-list .lval {
+    font-size: 13px;
+  }
+}
+
+
+/* ============================================================
+   RESULTS PAGE — LARGE DESKTOP
+   ============================================================ */
+
+@media (min-width: 1300px) {
+
+  body[data-screen="results"] .wrap {
+    max-width: 1000px;
+  }
+
+  body[data-screen="results"] .meter-num {
+    font-size: 58px;
+  }
+
+  body[data-screen="results"] #results-message {
+    padding: 24px 28px;
+  }
+
+  body[data-screen="results"] .wrap > div[style*="repeat(auto-fit"] {
+    gap: 18px !important;
+  }
+
+  body[data-screen="results"] .wrap > div[style*="repeat(auto-fit"] .ledger {
+    min-height: 190px;
+    padding: 22px !important;
+  }
+}
