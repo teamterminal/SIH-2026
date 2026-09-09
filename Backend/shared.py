@@ -56,36 +56,36 @@ def _extract_json_block(text: str) -> str:
 
 
 def _call_groq(system_prompt: str, user_prompt: str) -> str:
-    """Call Groq's OpenAI-compatible chat completion API."""
-
-    payload = {
-        "model": GROQ_MODEL,
-        "messages": [
-            {
-                "role": "system",
-                "content": system_prompt,
+        """Call Groq's OpenAI-compatible chat completion API."""
+        payload = {
+            "model": GROQ_MODEL,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": system_prompt,
+                },
+                {
+                    "role": "user",
+                    "content": user_prompt,
+                },
+            ],
+            "temperature": 0.4,
+            "max_completion_tokens": 3000,
+            "response_format": {
+                "type": "json_object"
             },
-            {
-                "role": "user",
-                "content": user_prompt,
+        }
+    
+        request = urllib.request.Request(
+            "https://api.groq.com/openai/v1/chat/completions",
+            data=json.dumps(payload).encode("utf-8"),
+            headers={
+                "Authorization": f"Bearer {GROQ_API_KEY}",
+                "Content-Type": "application/json",
+                "User-Agent": "SankhyaSetu/1.0",
             },
-        ],
-        "temperature": 0.4,
-        "max_completion_tokens": 3000,
-        "response_format": {
-            "type": "json_object"
-        },
-
-    request = urllib.request.Request(
-        "https://api.groq.com/openai/v1/chat/completions",
-        data=json.dumps(payload).encode("utf-8"),
-        headers={
-            "Authorization": f"Bearer {GROQ_API_KEY}",
-            "Content-Type": "application/json",
-            "User-Agent": "SankhyaSetu/1.0",
-        },
-        method="POST",
-    )
+            method="POST",
+        )
 
     try:
         with urllib.request.urlopen(request, timeout=120) as response:
