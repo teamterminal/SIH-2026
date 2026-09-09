@@ -73,7 +73,7 @@ function switchDashTab(tab) {
 // Session-aware bits: fab visibility + profile hydration.
 // Runs on every page via initPage() at the bottom of this file.
 // ============================================================
-const APP_SCREENS = ['dashboard', 'role', 'upload', 'spin', 'quiz', 'results', 'practice', 'progress'];
+const APP_SCREENS = ['dashboard', 'role', 'upload', 'spin', 'quiz', 'results', 'practice', 'progress', 'mistakes'];
 let currentUser = null;
 let quizTaken = false;
 let readinessScore = 0;
@@ -84,12 +84,23 @@ async function initPage() {
 
   const sidebarPageMap = {
     dashboard: 'dashboard.html', role: 'role.html', upload: 'upload.html',
-    progress: 'progress.html', practice: 'practice.html', profile: 'profile.html',
+    progress: 'progress.html', mistakes: 'mistakes.html', practice: 'practice.html', profile: 'profile.html',
     'igot-courses': 'igot-courses.html'
   };
   const activeHref = sidebarPageMap[screen];
   document.querySelectorAll('.sb-link').forEach(link => {
     if (link.tagName === 'A') link.classList.toggle('active', link.getAttribute('href') === activeHref);
+  });
+  // Add the My Mistakes link to existing sidebars without requiring every HTML page to be edited.
+  document.querySelectorAll('.sb-nav').forEach(nav => {
+    if (nav.querySelector('a[href="mistakes.html"]')) return;
+    const progressLink = nav.querySelector('a[href="progress.html"]');
+    if (!progressLink) return;
+    const link = document.createElement('a');
+    link.href = 'mistakes.html';
+    link.className = 'sb-link';
+    link.innerHTML = '<span>✕</span> My Mistakes';
+    progressLink.insertAdjacentElement('afterend', link);
   });
 
   const { data: { session } } = await supabaseClient.auth.getSession();
@@ -157,6 +168,10 @@ async function initPage() {
     loadIgotCourses();
   }
 
+  if (screen === 'mistakes') {
+    loadMistakesPage();
+  }
+
   if (screen === 'spin') {
     const params = new URLSearchParams(location.search);
     const step = params.get('step') || 'building';
@@ -189,6 +204,271 @@ async function initPage() {
   }
 }
 
+// ---- mistakes / competency review (mistakes.html only) ----
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function formatAttemptDate(dateStr) {
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return 'Date unavailable';
+  return d.toLocaleDateString(undefined, {
+    day: 'numeric', month: 'short', year: 'numeric'
+  }) + ' · ' + d.toLocaleTimeString(undefined, {
+    hour: 'numeric', minute: '2-digit'
+  });
+}
+
+function competencyStatus(score) {
+  if (score < 50) return { label: 'FOCUS', tone: 'focus' };
+  if (score < 75) return { label: 'DEVELOPING', tone: 'developing' };
+  return { label: 'STRONG', tone: 'strong' };
+}
+
+function renderCompetencyCard(stat) {
+  const score = Math.round(stat.total ? (stat.correct / stat.total) * 100 : 0);
+  const status = competencyStatus(score);
+  const filled = Math.max(1, Math.min(5, Math.round(score / 20)));
+  const cells = Array.from({ length: 5 }, (_, i) =>
+    `<span class="competency-cell ${i < filled ? 'is-filled tone-' + status.tone : ''}"></span>`
+  ).join('');
+  const mistakes = stat.total - stat.correct;
+  const safeName = escapeHtml(stat.name);
+
+  return `
+    <button type="button" class="competency-card" data-skill-id="${escapeHtml(stat.id || '')}">
+      <span class="competency-card-main">
+        <span class="competency-skill-name">${safeName}</span>
+        <span class="competency-meter">${cells}</span>
+        <span class="competency-meta mono">${stat.total} answered · ${mistakes} ${mistakes === 1 ? 'mistake' : 'mistakes'}</span>
+      </span>
+      <span class="competency-card-side">
+        <span class="competency-score mono">${score}%</span>
+        <span class="competency-status ${status.tone}">${status.label}</span>
+      </span>
+    </button>`;
+}
+
+function renderCompetencyHeatmap(questions) {
+  const loadingEl = document.getElementById('competency-loading');
+  const errorEl = document.getElementById('competency-error');
+  const gridEl = document.getElementById('competency-grid');
+  if (!gridEl) return;
+
+  const bySkill = new Map();
+  (questions || []).forEach(q => {
+    const name = q.skills?.name || 'Unassigned skill';
+    const id = q.skill_id || q.skills?.id || name;
+    if (!bySkill.has(id)) bySkill.set(id, { id, name, total: 0, correct: 0 });
+    const stat = bySkill.get(id);
+    stat.total += 1;
+    if (q.is_correct === true) stat.correct += 1;
+  });
+
+  const stats = [...bySkill.values()]
+    .filter(s => s.total > 0)
+    .sort((a, b) => {
+      const scoreA = a.correct / a.total;
+      const scoreB = b.correct / b.total;
+      return scoreA - scoreB || b.total - a.total || a.name.localeCompare(b.name);
+    });
+
+  if (!stats.length) {
+    gridEl.innerHTML = '<div class="competency-empty">Complete a quiz to build your competency heatmap.</div>';
+  } else {
+    gridEl.innerHTML = stats.map(renderCompetencyCard).join('');
+  }
+
+  loadingEl && (loadingEl.style.display = 'none');
+  if (errorEl) errorEl.style.display = 'none';
+}
+
+async function loadMistakesPage() {
+  const loadingEl = document.getElementById('mistakes-loading');
+  const emptyEl = document.getElementById('mistakes-empty');
+  const errorEl = document.getElementById('mistakes-error');
+  const listEl = document.getElementById('mistakes-list');
+  const countEl = document.getElementById('mistakes-count');
+  const competencyLoadingEl = document.getElementById('competency-loading');
+  const competencyErrorEl = document.getElementById('competency-error');
+
+  if (!currentUser?.id || !listEl) return;
+
+  loadingEl && (loadingEl.style.display = 'block');
+  emptyEl && (emptyEl.style.display = 'none');
+  errorEl && (errorEl.style.display = 'none');
+  listEl.innerHTML = '';
+
+  try {
+    const { data: attempts, error: attemptsError } = await supabaseClient
+      .from('quiz_attempt_scores')
+      .select('attempt_id, source, taken_at, score_percent, question_count')
+      .eq('profile_id', currentUser.id)
+      .order('taken_at', { ascending: false });
+
+    if (attemptsError) throw attemptsError;
+
+    if (!attempts || attempts.length === 0) {
+      loadingEl && (loadingEl.style.display = 'none');
+      emptyEl && (emptyEl.style.display = 'block');
+      if (countEl) countEl.textContent = '0';
+      competencyLoadingEl && (competencyLoadingEl.style.display = 'none');
+      return;
+    }
+
+    const attemptIds = attempts.map(a => a.attempt_id);
+    const { data: questions, error: questionsError } = await supabaseClient
+      .from('quiz_attempt_questions')
+      .select('id, attempt_id, skill_id, question_text, selected_option, correct_option, is_correct, skills(name)')
+      .in('attempt_id', attemptIds);
+
+    if (questionsError) throw questionsError;
+
+    // The heatmap uses ALL attempted questions. Mistake history uses only wrong answers.
+    renderCompetencyHeatmap(questions || []);
+
+    const questionsByAttempt = {};
+    (questions || [])
+      .filter(q => q.is_correct === false)
+      .forEach(q => {
+        if (!questionsByAttempt[q.attempt_id]) questionsByAttempt[q.attempt_id] = [];
+        questionsByAttempt[q.attempt_id].push(q);
+      });
+
+    const sourceGroups = [
+      {
+        key: 'role',
+        title: 'ROLE DIAGNOSTIC',
+        subtitle: 'Mistakes from your role-based competency assessments.',
+        sources: ['initial', 'reassess']
+      },
+      {
+        key: 'material',
+        title: 'UPLOADED MATERIAL',
+        subtitle: 'Mistakes from quizzes generated from your uploaded learning material.',
+        sources: ['material']
+      }
+    ];
+
+    let totalMistakes = 0;
+    let attemptsWithMistakes = 0;
+
+    const renderAttempt = (attempt) => {
+      const mistakes = questionsByAttempt[attempt.attempt_id] || [];
+      totalMistakes += mistakes.length;
+      if (mistakes.length) attemptsWithMistakes++;
+
+      const score = Math.round(Number(attempt.score_percent) || 0);
+      const mistakesCount = mistakes.length;
+      const skillCount = new Set(mistakes.map(q => q.skills?.name).filter(Boolean)).size;
+
+      const mistakesHtml = mistakes.length
+        ? `<div class="mistakes-grid">${mistakes.map((q, i) => {
+            const skill = q.skills?.name || 'Unassigned skill';
+            return `
+              <article class="mistake-item">
+                <div class="mistake-item-top">
+                  <span class="mono mistake-number">MISTAKE ${i + 1}</span>
+                  <span class="course-tag mono mistake-skill">${escapeHtml(skill)}</span>
+                </div>
+                <div class="mistake-question">${escapeHtml(q.question_text)}</div>
+                <div class="mistake-answers">
+                  <div class="mistake-answer mistake-answer-wrong">
+                    <span class="mono mistake-answer-label">YOUR ANSWER</span>
+                    <span>${escapeHtml(q.selected_option ?? 'Not answered')}</span>
+                  </div>
+                  <div class="mistake-answer mistake-answer-right">
+                    <span class="mono mistake-answer-label">CORRECT ANSWER</span>
+                    <span>${escapeHtml(q.correct_option)}</span>
+                  </div>
+                </div>
+              </article>`;
+          }).join('')}</div>`
+        : `
+          <div class="mistake-perfect">
+            <span class="mistake-perfect-icon">✓</span>
+            <span>No mistakes in this attempt. You answered all ${escapeHtml(attempt.question_count)} questions correctly.</span>
+          </div>`;
+
+      const card = document.createElement('article');
+      card.className = 'mistake-attempt';
+      card.innerHTML = `
+        <button type="button" class="mistake-attempt-toggle" aria-expanded="false">
+          <span class="mistake-attempt-toggle-main">
+            <span class="mistake-attempt-date mono">${escapeHtml(formatAttemptDate(attempt.taken_at))}</span>
+            <span class="mistake-attempt-meta">${escapeHtml(attempt.question_count)} questions · ${mistakesCount} ${mistakesCount === 1 ? 'mistake' : 'mistakes'}</span>
+          </span>
+          <span class="mistake-attempt-toggle-side">
+            <span class="mono mistake-attempt-score">${score}%</span>
+            <span class="mistake-attempt-chevron" aria-hidden="true">⌄</span>
+          </span>
+        </button>
+        <div class="mistake-attempt-details" hidden>
+          <div class="mistake-statline">
+            ${mistakesCount} ${mistakesCount === 1 ? 'MISTAKE' : 'MISTAKES'} · ${skillCount} ${skillCount === 1 ? 'SKILL' : 'SKILLS'} AFFECTED
+          </div>
+          ${mistakesHtml}
+        </div>`;
+
+      const toggle = card.querySelector('.mistake-attempt-toggle');
+      const details = card.querySelector('.mistake-attempt-details');
+      toggle.addEventListener('click', () => {
+        const open = toggle.getAttribute('aria-expanded') === 'true';
+        toggle.setAttribute('aria-expanded', String(!open));
+        details.hidden = open;
+        card.classList.toggle('is-open', !open);
+      });
+      return card;
+    };
+
+    sourceGroups.forEach(group => {
+      const groupAttempts = attempts.filter(a => group.sources.includes(a.source));
+      if (!groupAttempts.length) return;
+      const section = document.createElement('section');
+      section.className = `mistakes-source-section mistakes-source-${group.key}`;
+      section.innerHTML = `
+        <div class="mistakes-source-heading">
+          <div>
+            <div class="eyebrow mistakes-section-eyebrow">${escapeHtml(group.title)}</div>
+            <h2>${escapeHtml(group.title === 'ROLE DIAGNOSTIC' ? 'Role diagnostic history' : 'Uploaded material history')}</h2>
+            <p>${escapeHtml(group.subtitle)}</p>
+          </div>
+          <div class="mistakes-source-count mono">${groupAttempts.length} ${groupAttempts.length === 1 ? 'QUIZ' : 'QUIZZES'}</div>
+        </div>
+        <div class="mistakes-attempts"></div>`;
+      const attemptsContainer = section.querySelector('.mistakes-attempts');
+      groupAttempts.forEach(attempt => attemptsContainer.appendChild(renderAttempt(attempt)));
+      listEl.appendChild(section);
+    });
+
+    if (countEl) countEl.textContent = String(totalMistakes);
+    const summaryEl = document.getElementById('mistakes-summary');
+    if (summaryEl) {
+      summaryEl.textContent = attemptsWithMistakes
+        ? `${totalMistakes} mistake${totalMistakes === 1 ? '' : 's'} across ${attemptsWithMistakes} quiz${attemptsWithMistakes === 1 ? '' : 'zes'}. Review the skill tag on each mistake to see where you need more practice.`
+        : 'No mistakes recorded yet. Keep going — your previous quizzes are all clean.';
+    }
+
+    loadingEl && (loadingEl.style.display = 'none');
+  } catch (err) {
+    console.error('Failed to load quiz mistakes:', err);
+    loadingEl && (loadingEl.style.display = 'none');
+    competencyLoadingEl && (competencyLoadingEl.style.display = 'none');
+    if (errorEl) {
+      errorEl.textContent = 'Could not load your previous quiz mistakes. Please refresh and try again.';
+      errorEl.style.display = 'block';
+    }
+    if (competencyErrorEl) {
+      competencyErrorEl.textContent = 'Could not build the competency heatmap. Please refresh the page.';
+      competencyErrorEl.style.display = 'block';
+    }
+  }
+}
 // ---- profile screen ----
 function triggerPhotoUpload() {
   document.getElementById('photoInput').click();
