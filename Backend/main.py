@@ -45,7 +45,7 @@ from shared import (
 from Rag_quiz_generation import router as rag_router
 from study_material import router as study_material_router
 
-QUESTIONS_PER_QUIZ = 20
+QUESTIONS_PER_QUIZ = 15
 
 app = FastAPI(title="Sankhya Setu Quiz Backend")
 
