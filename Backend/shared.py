@@ -70,7 +70,7 @@ def _call_groq(system_prompt: str, user_prompt: str) -> str:
             },
         ],
         "temperature": 0.4,
-        "max_completion_tokens": 3000,
+        "max_completion_tokens": 8000,
         "response_format": {
             "type": "json_object"
         },
