@@ -6,7 +6,7 @@ Endpoints, called from the website:
   POST /generate-quiz   -> called when the user clicks "take a quiz"
                             for the standard role-based assessment.
                             Asks an open-source LLM (via LangChain +
-                            Hugging Face) for a 20-question MCQ quiz,
+                            Hugging Face) for a 15-question MCQ quiz,
                             stores it, and returns it WITHOUT the
                             correct answers (those stay server-side).
 
