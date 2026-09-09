@@ -6,7 +6,7 @@ Endpoints, called from the website:
   POST /generate-quiz   -> called when the user clicks "take a quiz"
                             for the standard role-based assessment.
                             Asks an open-source LLM (via LangChain +
-                            Hugging Face) for a 15-question MCQ quiz,
+                            Hugging Face) for an MCQ quiz with as many valid questions as the model generates,
                             stores it, and returns it WITHOUT the
                             correct answers (those stay server-side).
 
@@ -45,9 +45,8 @@ from shared import (
 from Rag_quiz_generation import router as rag_router
 from study_material import router as study_material_router
 
-QUESTIONS_PER_QUIZ = 15
 
-app = FastAPI(title="Sankhya Setu Quiz Backend")
+app = FastAPI(title="COMPASS Quiz Backend")
 
 # During development, allow any origin. Before a real deployment,
 # replace "*" with your actual site's domain(s).
@@ -122,27 +121,32 @@ class QuizLLMOutput(BaseModel):
 # ============================================================
 def build_quiz_prompt(profile: dict, skills: list[dict]) -> tuple[str, str]:
     skill_names = [s["name"] for s in skills]
-    per_skill = max(1, QUESTIONS_PER_QUIZ // len(skill_names))
+
     system = (
         "You are an expert quiz writer for India's Official Statistics "
         "System training programs. You output ONLY valid JSON, nothing else."
     )
+
     user = f"""
-Write exactly {QUESTIONS_PER_QUIZ} multiple-choice questions to assess a
-government official's CURRENT proficiency in these skills: {", ".join(skill_names)}.
+Create a multiple-choice quiz to assess a government official's CURRENT
+proficiency in these skills: {", ".join(skill_names)}.
+
+Generate as many high-quality questions as you can. There is NO fixed
+minimum or maximum number of questions. Return whatever number of useful,
+valid questions you are able to generate.
+
+Spread the questions across the listed skills as evenly as possible.
+Each question must have exactly 4 answer options, with exactly one correct
+option. Vary difficulty — include some foundational and some more advanced
+questions per skill, since this quiz is meant to measure current skill level,
+not just pass/fail.
 
 Context on who is taking this quiz:
 Job role: {profile["job_roles"]["name"]}
 Ministry / Department: {profile["ministries"]["name"] if profile.get("ministries") else "Not specified"}
 
-Spread the questions across the listed skills as evenly as possible
-(roughly {per_skill} questions per skill). Each question must have
-exactly 4 answer options, with exactly one correct option. Vary
-difficulty — include some foundational and some more advanced
-questions per skill, since this quiz is meant to measure current
-skill level, not just pass/fail.
-
 Respond with ONLY a JSON object in exactly this shape:
+
 {{
   "questions": [
     {{
@@ -154,6 +158,7 @@ Respond with ONLY a JSON object in exactly this shape:
   ]
 }}
 """.strip()
+
     return system, user
 
 
@@ -174,11 +179,7 @@ def generate_quiz(req: GenerateQuizRequest):
     if q.skill in skill_name_to_id and q.correct_option in q.options
     ]
 
-    if len(valid_questions) < QUESTIONS_PER_QUIZ:
-        raise HTTPException(
-            status_code=502,
-            detail=f"The model returned only {len(valid_questions)} usable questions. Expected {QUESTIONS_PER_QUIZ}."
-        )
+    
 
     attempt = (
         supabase.table("quiz_attempts")
