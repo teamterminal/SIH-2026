@@ -73,7 +73,7 @@ function switchDashTab(tab) {
 // Session-aware bits: fab visibility + profile hydration.
 // Runs on every page via initPage() at the bottom of this file.
 // ============================================================
-const APP_SCREENS = ['dashboard', 'role', 'upload', 'spin', 'quiz', 'results', 'practice', 'progress', 'mistakes'];
+const APP_SCREENS = ['dashboard', 'role', 'upload', 'spin', 'quiz', 'results', 'practice', 'progress', 'mistakes', 'admin'];
 let currentUser = null;
 let quizTaken = false;
 let readinessScore = 0;
@@ -85,7 +85,7 @@ async function initPage() {
   const sidebarPageMap = {
     dashboard: 'dashboard.html', role: 'role.html', upload: 'upload.html',
     progress: 'progress.html', mistakes: 'mistakes.html', practice: 'practice.html', profile: 'profile.html',
-    'igot-courses': 'igot-courses.html'
+    'igot-courses': 'igot-courses.html', admin: 'admin.html'
   };
   const activeHref = sidebarPageMap[screen];
   document.querySelectorAll('.sb-link').forEach(link => {
@@ -121,6 +121,7 @@ async function initPage() {
       years: profile?.years_in_role,
       qualification: profile?.qualification || '',
       field: profile?.field_of_study || '',
+      adminScope: profile?.admin_scope || 'none',
       photo: null
     };
 
@@ -136,6 +137,21 @@ async function initPage() {
     const sbRole = document.getElementById('sbUserRole');
     if (sbName) sbName.textContent = currentUser.name || 'Your profile';
     if (sbRole) sbRole.textContent = [currentUser.designation, currentUser.ministry].filter(Boolean).join(' · ') || 'Statistical Service';
+
+    // Admin-only sidebar link — added in code (not hardcoded in every
+    // page's HTML) so a regular officer's sidebar never even mentions it.
+    if (currentUser.adminScope !== 'none') {
+      document.querySelectorAll('.sb-nav').forEach(nav => {
+        if (nav.querySelector('a[href="admin.html"]')) return;
+        const anchor = nav.querySelector('a[href="igot-courses.html"]') || nav.querySelector('a[href="mistakes.html"]');
+        if (!anchor) return;
+        const link = document.createElement('a');
+        link.href = 'admin.html';
+        link.className = 'sb-link';
+        link.innerHTML = '<span>📊</span> Skill Gaps (Admin)';
+        anchor.insertAdjacentElement('afterend', link);
+      });
+    }
   } else if (fab) {
     fab.style.display = 'none';
   }
@@ -170,6 +186,10 @@ async function initPage() {
 
   if (screen === 'mistakes') {
     loadMistakesPage();
+  }
+
+  if (screen === 'admin') {
+    initAdminPage();
   }
 
   if (screen === 'spin') {

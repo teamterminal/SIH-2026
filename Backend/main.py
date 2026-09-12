@@ -44,7 +44,7 @@ from shared import (
 
 from Rag_quiz_generation import router as rag_router
 from study_material import router as study_material_router
-
+from admin import router as admin_router
 
 app = FastAPI(title="COMPASS Quiz Backend")
 
@@ -59,7 +59,7 @@ app.add_middleware(
 
 app.include_router(rag_router)
 app.include_router(study_material_router)
-
+app.include_router(admin_router)
 
 
 # ============================================================

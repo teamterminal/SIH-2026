@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Skill Gaps — Sankhya Setu</title>
+<meta name="description" content="Aggregate skill-gap overview for training administrators.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+</head>
+<body data-screen="admin">
+<div class="bg-glow" aria-hidden="true"></div>
+<div class="dash-corner-nav">
+  <button class="nav-hamburger" onclick="toggleSidebar()" aria-label="Open Menu"><span></span><span></span><span></span></button>
+  <div class="brand">
+    <img
+      src="assets/compass-logo.png"
+      alt="Sankhya Setu"
+      class="dashboard-logo"
+    >
+  </div>
+</div>
+<div id="app">
+  <section class="screen active" id="screen-admin">
+    <div class="wrap mistakes-wrap">
+      <div class="eyebrow" style="margin-top:16px;">ADMIN OVERVIEW</div>
+      <h1 style="margin-top:6px;">Skill gaps</h1>
+      <p class="lede" style="margin-top:4px;">
+        Average current score per skill, weakest first — <span id="adminScopeSubtext">across your ministry</span>.
+      </p>
+
+      <!-- Shown instead of everything else if this account isn't an admin.
+           The real enforcement happens server-side (the backend checks the
+           logged-in session itself) — this is just so a regular officer who
+           lands here directly sees a clear message instead of a blank page. -->
+      <div id="adminDenied" style="display:none; text-align:center; padding:34px 14px; background:var(--card); border:1px dashed var(--line); border-radius:8px; margin-top:18px;">
+        <h3 style="font-size:17px; font-weight:700; font-family:'Space Grotesk',sans-serif;">This page is for admin accounts</h3>
+        <p style="font-size:13px; color:var(--slate); margin-top:6px; line-height:1.5;">Your account doesn't have access to aggregate skill data.</p>
+        <div class="stack" style="margin-top:20px;"><button class="btn btn-solid" onclick="goScreen('dashboard')">Back to Dashboard</button></div>
+      </div>
+
+      <div id="adminSkillLoading" style="text-align:center; padding:28px 10px; color:var(--slate); font-size:13px;">
+        Loading skill gaps…
+      </div>
+
+      <div id="adminSkillEmpty" style="display:none; text-align:center; padding:34px 14px; background:var(--card); border:1px dashed var(--line); border-radius:8px; margin-top:18px;">
+        <h3 style="font-size:17px; font-weight:700; font-family:'Space Grotesk',sans-serif;">No quiz data yet</h3>
+        <p style="font-size:13px; color:var(--slate); margin-top:6px; line-height:1.5;">Once officers in scope have taken at least one quiz, their skill averages will show up here.</p>
+      </div>
+
+      <div id="adminSkillError" class="plain-msg" style="display:none; margin-top:16px; color:var(--brick);">
+        Something went wrong loading skill gaps. Try refreshing the page.
+      </div>
+
+      <div id="adminSkillContent" style="display:none;">
+
+        <section class="competency-panel" aria-labelledby="admin-chart-heading">
+          <div class="competency-panel-head">
+            <div>
+              <div class="eyebrow competency-eyebrow">SKILL AVERAGES</div>
+              <h2 id="admin-chart-heading">Where the gaps are</h2>
+              <p>Shortest bars need attention first.</p>
+            </div>
+          </div>
+          <div id="adminSkillChart" style="margin-top:14px;"></div>
+        </section>
+
+        <div class="ledger" style="margin-top:24px; padding:0; overflow:hidden;">
+          <table style="width:100%; border-collapse:collapse; font-size:13px;">
+            <thead>
+              <tr style="text-align:left; border-bottom:1px solid var(--line);">
+                <th style="padding:10px 14px;">Skill</th>
+                <th style="padding:10px 14px;">Avg. score (/10)</th>
+                <th style="padding:10px 14px;">Officers</th>
+              </tr>
+            </thead>
+            <tbody id="adminSkillTableBody"></tbody>
+          </table>
+        </div>
+
+      </div>
+
+      <div class="stack" style="margin-top:24px;">
+        <button class="btn-ghost" onclick="goScreen('dashboard')" style="margin:0 auto;">&larr; Back to Dashboard</button>
+      </div>
+      <div class="spacer"></div>
+    </div>
+  </section>
+</div>
+
+<div class="profile-fab" id="profileFab" title="Your profile" style="display:none;">
+  <span id="fabInitials">--</span><img id="fabImg" style="display:none;" alt="">
+</div>
+<div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
+<aside class="app-sidebar" id="appSidebar">
+  <div class="sb-header">
+    <div class="brand" style="justify-content:flex-start;">
+      <img
+        src="assets/compass-logo.png"
+        alt="Sankhya Setu"
+        class="sidebar-logo"
+      >
+    </div>
+    <button class="sb-close" onclick="toggleSidebar()">&times;</button>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-group-label">MAIN</div>
+    <a href="dashboard.html" class="sb-link"><span>🏠</span> Dashboard</a>
+    <a href="role.html" class="sb-link"><span>🎯</span> Role Diagnostic</a>
+    <a href="upload.html" class="sb-link"><span>📄</span> Upload Material</a>
+    <a href="progress.html" class="sb-link"><span>↗</span> Progress Tracker</a>
+    <a href="mistakes.html" class="sb-link"><span>✕</span> My Mistakes</a>
+    <a href="igot-courses.html" class="sb-link"><span>🏛️</span> iGOT Courses</a>
+    <!-- "Skill Gaps (Admin)" link is added here in code, only for admin_scope accounts -->
+    <div class="sb-group-label">LEARNING</div>
+    <a href="practice.html" class="sb-link"><span>📚</span> Matched Courses</a>
+    <div class="sb-group-label">ACCOUNT</div>
+    <a href="profile.html" class="sb-link"><span>👤</span> Profile Details</a>
+    <button class="sb-link sb-signout" onclick="signOut()"><span>🚪</span> Sign Out</button>
+  </nav>
+  <div class="sb-footer"><div class="sb-user-name" id="sbUserName">User</div><div class="sb-user-role" id="sbUserRole">Statistical Service</div></div>
+</aside>
+<footer class="appfoot"></footer>
+<script src="admin.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
