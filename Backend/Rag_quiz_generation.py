@@ -149,14 +149,36 @@ in enough depth to write {QUESTIONS_PER_COVERED_SKILL} genuine
 assessment questions grounded in it? If it only mentions the topic in
 passing, or not at all, say it is NOT covered — do not force questions
 that would rely on outside knowledge instead of this material.
-
+ 
 If it IS covered, write exactly {QUESTIONS_PER_COVERED_SKILL}
 multiple-choice questions, each with exactly 4 options and one
 correct option, based ONLY on the excerpts above.
-
+ 
+EVERY question MUST be framed as a realistic, applied situation this
+official would actually face in the field or office — NOT a plain
+"what does X mean" or "which of the following is true" recall question.
+Describe a short, concrete scenario, then ask what the correct
+action, interpretation, or judgment call is, with the right answer
+grounded in the material above.
+ 
+Do NOT write a question like this (plain recall — forbidden):
+"What is the primary purpose of a sampling frame?"
+ 
+Instead, write questions like this (scenario-based — required):
+"During an NSS household survey round, a Field Investigator discovers
+that the list of households provided doesn't match what actually
+exists in the village — some listed addresses are vacant plots, and
+several occupied homes are missing from the list. Based on the
+material, what should the investigator do first?"
+ 
+If a skill is more conceptual than procedural, still frame it through
+a person in this role encountering it on the job (e.g. "An official is
+explaining X to a new colleague — which statement is correct?") rather
+than asking about the term in isolation.
+ 
 Respond with ONLY a JSON object in exactly this shape:
 {{"covered": true, "questions": [{{"question": "...", "options": ["...", "...", "...", "..."], "correct_option": "..."}}]}}
-
+ 
 or, if not covered:
 {{"covered": false, "questions": []}}
 """.strip()
