@@ -44,7 +44,7 @@ from shared import (
 
 from Rag_quiz_generation import router as rag_router
 from study_material import router as study_material_router
-from admin import router as admin_router
+
 
 app = FastAPI(title="COMPASS Quiz Backend")
 
@@ -59,7 +59,7 @@ app.add_middleware(
 
 app.include_router(rag_router)
 app.include_router(study_material_router)
-app.include_router(admin_router)
+
 
 
 # ============================================================
@@ -67,6 +67,7 @@ app.include_router(admin_router)
 # ============================================================
 class GenerateQuizRequest(BaseModel):
     profile_id: str
+    language: str = "English"
 
 
 class QuestionOut(BaseModel):
@@ -119,12 +120,24 @@ class QuizLLMOutput(BaseModel):
 # Prompt builder (standard role-based quiz only — see
 # Rag_quiz_generation.py for the material-based prompt)
 # ============================================================
-def build_quiz_prompt(profile: dict, skills: list[dict]) -> tuple[str, str]:
+def build_quiz_prompt(profile: dict, skills: list[dict], language: str = "English") -> tuple[str, str]:
     skill_names = [s["name"] for s in skills]
+
+    language_rule = (
+        "Write all question and option text in English."
+        if language == "English" else
+        f'CRITICAL LANGUAGE REQUIREMENT: every "question" and every entry in '
+        f'"options" MUST be written in {language}, using {language} script '
+        f'(not English, and not a romanized/transliterated version). Only '
+        f'the "skill" field stays in English exactly as given, since it is '
+        f'matched against internal records — everything else must be in '
+        f'{language}.'
+    )
 
     system = (
         "You are an expert quiz writer for India's Official Statistics "
-        "System training programs. You output ONLY valid JSON, nothing else."
+        "System training programs. You output ONLY valid JSON, nothing else. "
+        f"{language_rule}"
     )
 
     user = f"""
@@ -145,18 +158,22 @@ Context on who is taking this quiz:
 Job role: {profile["job_roles"]["name"]}
 Ministry / Department: {profile["ministries"]["name"] if profile.get("ministries") else "Not specified"}
 
+{language_rule}
+
 Respond with ONLY a JSON object in exactly this shape:
 
 {{
   "questions": [
     {{
-      "skill": "Exact skill name from the list above",
-      "question": "The question text",
-      "options": ["Option A", "Option B", "Option C", "Option D"],
+      "skill": "Exact skill name from the list above, in English",
+      "question": "The question text{'' if language == 'English' else f' — in {language}'}",
+      "options": ["Option A", "Option B", "Option C", "Option D"]{'' if language == 'English' else f' — all four in {language}'},
       "correct_option": "The exact text of the correct option, matching one of the options above"
     }}
   ]
 }}
+
+Reminder: {language_rule}
 """.strip()
 
     return system, user
@@ -171,7 +188,7 @@ def generate_quiz(req: GenerateQuizRequest):
     skills = fetch_role_skills(profile["job_roles"]["id"])
     skill_name_to_id = {s["name"]: s["id"] for s in skills}
 
-    q_system, q_user = build_quiz_prompt(profile, skills)
+    q_system, q_user = build_quiz_prompt(profile, skills, req.language)
     quiz: QuizLLMOutput = call_llm_for_json(q_system, q_user, QuizLLMOutput)
 
     valid_questions = [

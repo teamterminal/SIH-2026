@@ -60,6 +60,18 @@
         </div>
 
         <div class="spacer"></div>
+        <div class="stack" style="margin-bottom:14px; text-align:left;">
+          <label for="uploadLanguageSelect" style="font-size:13px; color:var(--slate); display:block; margin-bottom:6px;">Quiz language</label>
+          <select id="uploadLanguageSelect">
+            <option value="English" selected>English</option>
+            <option value="Hindi">हिंदी (Hindi)</option>
+            <option value="Marathi">मराठी (Marathi)</option>
+            <option value="Tamil">தமிழ் (Tamil)</option>
+            <option value="Telugu">తెలుగు (Telugu)</option>
+            <option value="Bengali">বাংলা (Bengali)</option>
+            <option value="Gujarati">ગુજરાતી (Gujarati)</option>
+          </select>
+        </div>
         <div class="stack">
           <button class="btn btn-solid" id="upload-continue" onclick="uploadAndGenerateQuiz()" disabled>Generate my quiz</button>
           <button class="btn-ghost" onclick="goScreen('role')" style="margin:0 auto;">&larr; Back to role selection</button>

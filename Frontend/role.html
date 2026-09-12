@@ -35,6 +35,18 @@
       <p class="lede">We'll use your job profile to build a short diagnostic quiz — or you can point us at your own material instead.</p>
 
       <div class="spacer"></div>
+      <div class="stack" style="margin-bottom:14px; text-align:left;">
+        <label for="quizLanguageSelect" style="font-size:13px; color:var(--slate); display:block; margin-bottom:6px;">Quiz language</label>
+        <select id="quizLanguageSelect" onchange="sessionStorage.setItem('quizLanguage', this.value)">
+          <option value="English" selected>English</option>
+          <option value="Hindi">हिंदी (Hindi)</option>
+          <option value="Marathi">मराठी (Marathi)</option>
+          <option value="Tamil">தமிழ் (Tamil)</option>
+          <option value="Telugu">తెలుగు (Telugu)</option>
+          <option value="Bengali">বাংলা (Bengali)</option>
+          <option value="Gujarati">ગુજરાતી (Gujarati)</option>
+        </select>
+      </div>
       <div class="stack">
         <button class="btn btn-solid" onclick="startQuiz('role')">Take the quick quiz</button>
         <button class="btn-text" style="margin:2px auto 0;" onclick="goScreen('upload')">Or upload your own training material instead &rarr;</button>

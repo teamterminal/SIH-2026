@@ -752,6 +752,8 @@ async function uploadAndGenerateQuiz() {
   const formData = new FormData();
   formData.append('profile_id', currentUser.id);
   formData.append('file', selectedFile);
+  const langSelect = document.getElementById('uploadLanguageSelect');
+  formData.append('language', langSelect ? langSelect.value : 'English');
 
   try {
     const res = await fetch(BACKEND_URL + '/generate-quiz-from-material', {
@@ -1133,7 +1135,10 @@ async function runGenerateQuiz() {
     const res = await fetch(BACKEND_URL + '/generate-quiz', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ profile_id: currentUser.id })
+      body: JSON.stringify({
+        profile_id: currentUser.id,
+        language: sessionStorage.getItem('quizLanguage') || 'English'
+      })
     });
     const data = await res.json();
     if (!res.ok) {

@@ -128,13 +128,25 @@ def build_vectorstore(text: str) -> InMemoryVectorStore:
 # this one must ground everything in the retrieved excerpts, not the
 # model's general knowledge).
 # ============================================================
-def build_skill_prompt(skill_name: str, role_name: str, context_chunks: list[str]) -> tuple[str, str]:
+def build_skill_prompt(skill_name: str, role_name: str, context_chunks: list[str], language: str = "English") -> tuple[str, str]:
     context_text = "\n\n---\n\n".join(context_chunks)
-    system = (
-        "You write assessment questions strictly grounded in provided "
-        "source material, for India's Official Statistics System "
-        "training programs. You output ONLY valid JSON, nothing else."
+
+    language_rule = (
+        "Write the \"question\" and every entry in \"options\" in English."
+        if language == "English" else
+        f'CRITICAL LANGUAGE REQUIREMENT: the "question" and every entry in '
+        f'"options" MUST be written in {language}, using {language} script '
+        f'(not English, and not a romanized/transliterated version), even '
+        f'though the source material below is in English.'
     )
+
+    system = (
+        "You write REALISTIC, SCENARIO-BASED assessment questions strictly "
+        "grounded in provided source material, for India's Official Statistics "
+        "System training programs. You never write plain recall/definition "
+        f"questions. You output ONLY valid JSON, nothing else. {language_rule}"
+    )
+
     user = f"""
 A government official in the role "{role_name}" has studied the material excerpts
 below and wants to be re-assessed on this specific skill: {skill_name}
@@ -149,38 +161,42 @@ in enough depth to write {QUESTIONS_PER_COVERED_SKILL} genuine
 assessment questions grounded in it? If it only mentions the topic in
 passing, or not at all, say it is NOT covered — do not force questions
 that would rely on outside knowledge instead of this material.
- 
+
 If it IS covered, write exactly {QUESTIONS_PER_COVERED_SKILL}
 multiple-choice questions, each with exactly 4 options and one
 correct option, based ONLY on the excerpts above.
- 
+
 EVERY question MUST be framed as a realistic, applied situation this
 official would actually face in the field or office — NOT a plain
 "what does X mean" or "which of the following is true" recall question.
 Describe a short, concrete scenario, then ask what the correct
 action, interpretation, or judgment call is, with the right answer
 grounded in the material above.
- 
+
 Do NOT write a question like this (plain recall — forbidden):
 "What is the primary purpose of a sampling frame?"
- 
+
 Instead, write questions like this (scenario-based — required):
 "During an NSS household survey round, a Field Investigator discovers
 that the list of households provided doesn't match what actually
 exists in the village — some listed addresses are vacant plots, and
 several occupied homes are missing from the list. Based on the
 material, what should the investigator do first?"
- 
+
 If a skill is more conceptual than procedural, still frame it through
 a person in this role encountering it on the job (e.g. "An official is
 explaining X to a new colleague — which statement is correct?") rather
 than asking about the term in isolation.
- 
+
+{language_rule}
+
 Respond with ONLY a JSON object in exactly this shape:
 {{"covered": true, "questions": [{{"question": "...", "options": ["...", "...", "...", "..."], "correct_option": "..."}}]}}
- 
+
 or, if not covered:
 {{"covered": false, "questions": []}}
+
+Reminder: {language_rule}
 """.strip()
     return system, user
 
@@ -192,6 +208,7 @@ or, if not covered:
 async def generate_quiz_from_material(
     profile_id: str = Form(...),
     file: UploadFile = File(...),
+    language: str = Form("English"),
 ):
     if file.content_type != "application/pdf":
         raise HTTPException(status_code=400, detail="Only PDF files are supported right now")
@@ -214,7 +231,7 @@ async def generate_quiz_from_material(
             continue
 
         context_chunks = [m.page_content for m in matches]
-        system, user = build_skill_prompt(skill["name"], profile["job_roles"]["name"], context_chunks)
+        system, user = build_skill_prompt(skill["name"], profile["job_roles"]["name"], context_chunks, language)
 
         try:
             # Fewer retries than the standard quiz (2, not 3) — this
