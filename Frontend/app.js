@@ -1439,194 +1439,9 @@ async function loadHistoryCards(prefix) {
   return attempts;
 }
 
-async function loadDashboardResultsTab() {
-  const attempts = await loadHistoryCards('dash');
-  if (!attempts) return;
-
-  const emptyHistoryEl = document.getElementById('dash-history-empty');
-  const emptyProg = document.getElementById('dash-progress-empty');
-  const fullProg = document.getElementById('dash-progress-full');
-
-  if (attempts.length === 0) {
-    if (emptyHistoryEl) emptyHistoryEl.style.display = 'block';
-    if (emptyProg) emptyProg.style.display = 'block';
-    if (fullProg) fullProg.style.display = 'none';
-    return;
-  }
-  if (emptyHistoryEl) emptyHistoryEl.style.display = 'none';
-
-  // 1. Average & Highlights Card
-  const scores = attempts.map(a => a.score_percent);
-  const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
-  const hi = Math.max(...scores);
-  const lo = Math.min(...scores);
-  
-  const avgScoreEl = document.getElementById('dash-avg-score');
-  if (avgScoreEl) avgScoreEl.textContent = Math.round(avg) + '%';
-  const hiValEl = document.getElementById('dash-avg-hi-val');
-  if (hiValEl) hiValEl.textContent = Math.round(hi) + '%';
-  const hiBarEl = document.getElementById('dash-avg-hi-bar');
-  if (hiBarEl) hiBarEl.style.width = Math.round(hi) + '%';
-  const loValEl = document.getElementById('dash-avg-lo-val');
-  if (loValEl) loValEl.textContent = Math.round(lo) + '%';
-  const loBarEl = document.getElementById('dash-avg-lo-bar');
-  if (loBarEl) loBarEl.style.width = Math.round(lo) + '%';
-
-  if (attempts.length >= 2) {
-    const delta = attempts[attempts.length - 1].score_percent - attempts[attempts.length - 2].score_percent;
-    const trendEl = document.getElementById('dash-avg-trend');
-    if (trendEl) {
-      trendEl.textContent = (delta >= 0 ? '▲ +' : '▼ ') + Math.abs(delta).toFixed(1) + '%';
-      trendEl.style.color = delta >= 0 ? 'var(--teal)' : 'var(--brick)';
-    }
-  }
-
-  // 2. Quiz History List
-  const listEl = document.getElementById('dash-history-list');
-  if (listEl) {
-    listEl.innerHTML = '';
-    const sourceLabels = { initial: 'Role Diagnostic', material: 'Uploaded Material', reassess: 'Re-assessment' };
-    [...attempts].reverse().slice(0, 10).forEach(a => {
-      const tier = a.score_percent >= 80
-        ? { tag: 'PASSED', color: 'var(--teal)' }
-        : a.score_percent >= 50
-          ? { tag: 'REVIEW', color: 'var(--amber)' }
-          : { tag: 'NEEDS WORK', color: 'var(--brick)' };
-      const row = document.createElement('div');
-      row.className = 'lrow';
-      row.style.padding = '12px 6px';
-      row.innerHTML = `<span class="sq2" style="background:${tier.color};"></span>
-        <div style="display:flex; flex-direction:column; gap:2px;">
-          <span class="lname" style="font-weight:600;">${sourceLabels[a.source] || a.source}</span>
-          <span style="font-size:11px; color:var(--slate);">${a.question_count} questions · Completed ${timeAgo(a.taken_at)}</span>
-        </div>
-        <span class="dots"></span>
-        <span class="lval mono">${Math.round(a.score_percent)}%</span>
-        <span class="ltag mono" style="color:${tier.color};">${tier.tag}</span>`;
-      listEl.appendChild(row);
-    });
-  }
-
-  // 3. Progress Tab (Comparison across multiple attempts)
-  const rowsEl = document.getElementById('dash-progress-rows');
-  const bannerEl = document.getElementById('dash-progress-banner');
-
-  if (attempts.length >= 2) {
-    if (emptyProg) emptyProg.style.display = 'none';
-    if (fullProg) fullProg.style.display = 'block';
-
-    const first = attempts[0]; // Oldest attempt
-    const latest = attempts[attempts.length - 1]; // Newest attempt
-    const delta = Math.round(latest.score_percent - first.score_percent);
-
-    if (rowsEl) {
-      rowsEl.innerHTML = `
-        <div class="compare-row" style="margin-top:14px;">
-          <div class="cname">Overall Diagnostic Score</div>
-          <div class="compare-vals">
-            <span class="pill before">${Math.round(first.score_percent)}%</span>
-            <span class="arrow">&rarr;</span>
-            <span class="pill ${delta >= 0 ? 'after' : 'before'}">${Math.round(latest.score_percent)}%</span>
-          </div>
-        </div>
-      `;
-    }
-
-    if (bannerEl) {
-      bannerEl.innerHTML = delta >= 0
-        ? `<div style="text-align:center;"><div class="badge-win">✓ GAINED +${delta}% SINCE FIRST ATTEMPT</div></div>`
-        : `<div class="plain-msg"><b>Score dipped by ${Math.abs(delta)}%.</b> <span>Practice recommended on iGOT.</span></div>`;
-    }
-  } else {
-    if (emptyProg) emptyProg.style.display = 'block';
-    if (fullProg) fullProg.style.display = 'none';
-  }
-}
-
-// ---- igot-courses.html: real course matches from skill_gaps ----
-async function loadIgotCourses() {
-  const loadingEl = document.getElementById('igot-loading');
-  const emptyEl = document.getElementById('igot-empty');
-  const listEl = document.getElementById('igot-course-list');
-
-  if (!currentUser || !currentUser.id) {
-    loadingEl.textContent = 'Sign in to see your recommendations.';
-    return;
-  }
-
-  const { data: gaps, error: gapsError } = await supabaseClient
-    .from('skill_gaps')
-    .select('skill_id, skill_name, gap')
-    .eq('profile_id', currentUser.id)
-    .gt('gap', 0)
-    .order('gap', { ascending: false });
-
-  if (gapsError || !gaps || gaps.length === 0) {
-    loadingEl.style.display = 'none';
-    emptyEl.style.display = 'block';
-    return;
-  }
-
-  const skillIds = gaps.map(g => g.skill_id);
-  const { data: courseLinks, error: coursesError } = await supabaseClient
-    .from('course_skills')
-    .select('skill_id, courses(id, title, description, igot_link)')
-    .in('skill_id', skillIds);
-
-  if (coursesError || !courseLinks || courseLinks.length === 0) {
-    loadingEl.style.display = 'none';
-    emptyEl.style.display = 'block';
-    emptyEl.querySelector('h3').textContent = 'No matching courses yet';
-    emptyEl.querySelector('p').textContent = 'You have open gaps, but no course in the catalog covers them yet.';
-    return;
-  }
-
-  const gapBySkillId = Object.fromEntries(gaps.map(g => [g.skill_id, g]));
-  const courses = courseLinks
-    .filter(l => l.courses)
-    .map(l => ({
-      title: l.courses.title,
-      description: l.courses.description || '',
-      igot_link: l.courses.igot_link || 'https://igotkarmayogi.gov.in/',
-      skill_name: gapBySkillId[l.skill_id]?.skill_name || '',
-      gap: gapBySkillId[l.skill_id]?.gap || 0
-    }))
-    .sort((a, b) => b.gap - a.gap)
-    .slice(0, 6);
-
-  const badges = [
-    { label: 'PRIORITY FIX', bg: 'var(--brick)', color: '#fff' },
-    { label: 'SKILL REFINEMENT', bg: 'var(--amber)', color: '#12181F' },
-    { label: 'ADVANCED MODULE', bg: 'var(--teal)', color: '#fff' }
-  ];
-
-  listEl.innerHTML = '';
-  courses.forEach((c, i) => {
-    const badge = badges[i] || badges[badges.length - 1];
-    const gapPercent = Math.round(c.gap * 10);
-    const card = document.createElement('div');
-    card.className = 'ledger course-card';
-    card.style.margin = '0';
-    card.innerHTML = `
-      <div class="ledger-tab" style="background:${badge.bg}; color:${badge.color};">${badge.label}</div>
-      <div class="num mono">COURSE ${String(i + 1).padStart(2, '0')} · IGOT PORTAL</div>
-      <h3 style="font-size:18px; font-weight:700; margin-top:6px; font-family:'Space Grotesk',sans-serif;">${c.title}</h3>
-      <p style="font-size:13px; color:var(--slate); margin-top:6px; line-height:1.5;">${c.description || 'On iGOT Karmayogi.'}</p>
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; flex-wrap:wrap; gap:10px;">
-        <span class="course-tag mono">RESOLVES GAP: ${c.skill_name.toUpperCase()} (${gapPercent}%)</span>
-        <a href="${c.igot_link}" target="_blank" rel="noopener noreferrer" class="btn btn-solid" style="padding:8px 16px; font-size:12px; text-decoration:none;">Open on iGOT &rarr;</a>
-      </div>`;
-    listEl.appendChild(card);
-  });
-
-  loadingEl.style.display = 'none';
-  listEl.style.display = 'grid';
-}
-
-
 // ============================================================
-// Dashboard Overview — LIVE QUIZ RESULTS FROM SUPABASE
-// Uses the user's latest quiz attempt + skill_snapshots.
+// Dashboard Overview — LIVE COMPETENCY RESULTS FROM SUPABASE
+// Uses the averaged diagnostic competency from skill_gaps.
 // ============================================================
 async function loadDashboardOverviewTab() {
   if (!currentUser || !currentUser.id) return;
@@ -1639,22 +1454,7 @@ async function loadDashboardOverviewTab() {
   const statCoursesEl = document.getElementById('statCourses');
 
   // ----------------------------------------------------------
-  // 1. Get the user's latest quiz attempt
-  // ----------------------------------------------------------
-  const { data: latestAttempt, error: attemptError } = await supabaseClient
-    .from('quiz_attempts')
-    .select('id, job_role_id, taken_at, source')
-    .eq('profile_id', currentUser.id)
-    .order('taken_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (attemptError) {
-    console.error('Failed to load latest quiz attempt:', attemptError);
-  }
-
-  // ----------------------------------------------------------
-  // 2. Count total quizzes taken
+  // 1. Count total quizzes taken
   // ----------------------------------------------------------
   const { count: quizCount, error: countError } = await supabaseClient
     .from('quiz_attempts')
@@ -1670,9 +1470,29 @@ async function loadDashboardOverviewTab() {
   }
 
   // ----------------------------------------------------------
-  // No quiz yet
+  // 2. Get the canonical competency data
+  //    skill_gaps now averages all initial diagnostic attempts.
   // ----------------------------------------------------------
-  if (!latestAttempt) {
+  const { data: gaps, error: gapsError } = await supabaseClient
+    .from('skill_gaps')
+    .select(
+      'skill_id, skill_name, required_level, current_level, gap, last_assessed_at'
+    )
+    .eq('profile_id', currentUser.id);
+
+  if (gapsError) {
+    console.error('Failed to load competency data:', gapsError);
+
+    if (emptyOver) emptyOver.style.display = 'block';
+    if (fullOver) fullOver.style.display = 'none';
+
+    if (statReadyEl) statReadyEl.textContent = '—';
+    if (statWeakEl) statWeakEl.textContent = '—';
+
+    return;
+  }
+
+  if (!gaps || gaps.length === 0) {
     if (emptyOver) emptyOver.style.display = 'block';
     if (fullOver) fullOver.style.display = 'none';
 
@@ -1683,94 +1503,44 @@ async function loadDashboardOverviewTab() {
   }
 
   // ----------------------------------------------------------
-  // 3. Get skill snapshots from THE LATEST QUIZ
+  // 3. Convert database competency levels (0–10)
+  //    into percentages (0–100)
   // ----------------------------------------------------------
-  const { data: snapshots, error: snapshotError } = await supabaseClient
-    .from('skill_snapshots')
-    .select('skill_id, score, taken_at')
-    .eq('profile_id', currentUser.id)
-    .eq('attempt_id', latestAttempt.id);
+  const skills = gaps
+    .filter(skill => skill.current_level !== null)
+    .map(skill => {
+      const scorePercent = Math.round(
+        Number(skill.current_level || 0) * 10
+      );
 
-  if (snapshotError) {
-    console.error('Failed to load skill snapshots:', snapshotError);
+      const requiredPercent =
+        skill.required_level !== null &&
+        skill.required_level !== undefined
+          ? Number(skill.required_level) * 10
+          : null;
 
+      const gapPercent =
+        requiredPercent !== null
+          ? Math.max(0, requiredPercent - scorePercent)
+          : 0;
+
+      return {
+        id: skill.skill_id,
+        name: skill.skill_name || 'Unknown skill',
+        score: scorePercent,
+        required: requiredPercent,
+        gap: gapPercent
+      };
+    });
+
+  if (skills.length === 0) {
     if (emptyOver) emptyOver.style.display = 'block';
     if (fullOver) fullOver.style.display = 'none';
-
-    return;
-  }
-
-  if (!snapshots || snapshots.length === 0) {
-    if (emptyOver) emptyOver.style.display = 'block';
-    if (fullOver) fullOver.style.display = 'none';
     return;
   }
 
   // ----------------------------------------------------------
-  // 4. Get skill names
-  // ----------------------------------------------------------
-  const skillIds = snapshots.map(s => s.skill_id);
-
-  const { data: skillRows, error: skillError } = await supabaseClient
-    .from('skills')
-    .select('id, name')
-    .in('id', skillIds);
-
-  if (skillError) {
-    console.error('Failed to load skill names:', skillError);
-    return;
-  }
-
-  const skillNameById = Object.fromEntries(
-    (skillRows || []).map(s => [s.id, s.name])
-  );
-
-  // ----------------------------------------------------------
-  // 5. Get required levels for this user's role
-  // ----------------------------------------------------------
-  const { data: requiredRows, error: requiredError } = await supabaseClient
-    .from('job_role_skills')
-    .select('skill_id, required_level')
-    .eq('job_role_id', latestAttempt.job_role_id)
-    .in('skill_id', skillIds);
-
-  if (requiredError) {
-    console.error('Failed to load required skill levels:', requiredError);
-  }
-
-  const requiredBySkillId = Object.fromEntries(
-    (requiredRows || []).map(r => [r.skill_id, r.required_level])
-  );
-
-  // ----------------------------------------------------------
-  // 6. Build the LIVE overview skill dataset
-  // ----------------------------------------------------------
-  const skills = snapshots.map(snapshot => {
-    const scorePercent = Math.round((snapshot.score || 0) * 10);
-    const requiredLevel = requiredBySkillId[snapshot.skill_id];
-
-    const requiredPercent =
-      requiredLevel !== null &&
-      requiredLevel !== undefined
-        ? requiredLevel * 10
-        : null;
-
-    const gapPercent =
-      requiredPercent !== null
-        ? Math.max(0, requiredPercent - scorePercent)
-        : 0;
-
-    return {
-      id: snapshot.skill_id,
-      name: skillNameById[snapshot.skill_id] || 'Unknown skill',
-      score: scorePercent,
-      required: requiredPercent,
-      gap: gapPercent
-    };
-  });
-
-  // ----------------------------------------------------------
-  // 7. Calculate role readiness
+  // 4. Calculate role readiness
   // ----------------------------------------------------------
   const readinessValues = skills
     .filter(s => s.required !== null && s.required > 0)
@@ -1786,16 +1556,20 @@ async function loadDashboardOverviewTab() {
         skills.length
       );
 
-  // Skills below their required level
+  // ----------------------------------------------------------
+  // 5. Count skills below required level
+  // ----------------------------------------------------------
   const gapsFound = skills.filter(s =>
     s.required !== null && s.score < s.required
   ).length;
 
-  // Strong skills
+  // ----------------------------------------------------------
+  // 6. Count strong skills
+  // ----------------------------------------------------------
   const strongSkills = skills.filter(s => s.score >= 70);
 
   // ----------------------------------------------------------
-  // 8. Show full Overview
+  // 7. Show full Overview
   // ----------------------------------------------------------
   if (emptyOver) emptyOver.style.display = 'none';
   if (fullOver) fullOver.style.display = 'block';
@@ -1809,7 +1583,7 @@ async function loadDashboardOverviewTab() {
   }
 
   // ----------------------------------------------------------
-  // 9. Legacy meter — keep it working
+  // 8. Legacy meter
   // ----------------------------------------------------------
   const meterNum = document.getElementById('dashMeterNum');
 
@@ -1829,7 +1603,7 @@ async function loadDashboardOverviewTab() {
   }
 
   // ----------------------------------------------------------
-  // 10. Build skill list used by Premium Overview
+  // 9. Build skill list
   // ----------------------------------------------------------
   const listEl = document.getElementById('dash-overview-list');
 
@@ -1871,7 +1645,7 @@ async function loadDashboardOverviewTab() {
   }
 
   // ----------------------------------------------------------
-  // 11. Premium Overview stats
+  // 10. Premium Overview stats
   // ----------------------------------------------------------
   const strongStat = document.getElementById('ov-stat-strong');
 
@@ -1880,7 +1654,7 @@ async function loadDashboardOverviewTab() {
   }
 
   // ----------------------------------------------------------
-  // 12. Premium Overview insight
+  // 11. Premium Overview insight
   // ----------------------------------------------------------
   const strongest = [...skills]
     .sort((a, b) => b.score - a.score)[0];
@@ -1903,78 +1677,8 @@ async function loadDashboardOverviewTab() {
         `${strongest.name} is your strongest area.`;
 
       insightText.textContent =
-        `You're currently meeting the required level across your assessed skills.`;
+        `Your current competency profile is meeting the required level across your assessed skills.`;
     }
-  }
-
-  // ----------------------------------------------------------
-  // 13. Up Next — based on the biggest REAL skill gap
-  // ----------------------------------------------------------
-  const openGaps = skills
-    .filter(s => s.gap > 0)
-    .sort((a, b) => b.gap - a.gap);
-
-  const upNextCard = document.getElementById('dash-upnext-card');
-
-  if (upNextCard) {
-    upNextCard.style.display = 'none';
-  }
-
-  if (openGaps.length > 0) {
-    const { data: courseLinks, error: courseError } =
-      await supabaseClient
-        .from('course_skills')
-        .select('skill_id, courses(title, description)')
-        .in(
-          'skill_id',
-          openGaps.map(s => s.id)
-        );
-
-    if (courseError) {
-      console.error('Failed to load Overview course recommendation:', courseError);
-    }
-
-    const gapBySkillId = Object.fromEntries(
-      openGaps.map(s => [s.id, s])
-    );
-
-    const best = (courseLinks || [])
-      .filter(link => link.courses)
-      .sort(
-        (a, b) =>
-          (gapBySkillId[b.skill_id]?.gap || 0) -
-          (gapBySkillId[a.skill_id]?.gap || 0)
-      )[0];
-
-    if (best && upNextCard) {
-      upNextCard.style.display = 'block';
-
-      const titleEl = document.getElementById('dash-upnext-title');
-      const metaEl = document.getElementById('dash-upnext-meta');
-      const tagEl = document.getElementById('dash-upnext-tag');
-
-      if (titleEl) {
-        titleEl.textContent = best.courses.title;
-      }
-
-      if (metaEl) {
-        metaEl.textContent =
-          best.courses.description || 'On iGOT Karmayogi';
-      }
-
-      if (tagEl) {
-        tagEl.textContent =
-          'FIXES: ' +
-          (gapBySkillId[best.skill_id]?.name || '').toUpperCase();
-      }
-    }
-  }
-
-  // ----------------------------------------------------------
-  // 14. Tell Premium Overview to refresh immediately
-  // ----------------------------------------------------------
-  if (typeof window.refreshPremiumOverview === 'function') {
-    window.refreshPremiumOverview();
   }
 }
 
