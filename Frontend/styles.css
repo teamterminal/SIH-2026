@@ -508,6 +508,22 @@ body[data-screen="dashboard"]::before {
   z-index: 50;
   pointer-events: none;
 }
+
+/* Keep dashboard controls above the translucent top bar */
+body[data-screen="dashboard"] .dash-corner-nav {
+  z-index: 100;
+}
+
+body[data-screen="dashboard"] .profile-fab {
+  z-index: 101;
+}
+
+/* Move dashboard greeting below the translucent top bar */
+@media (min-width: 900px) {
+  body[data-screen="dashboard"] #screen-dashboard .wrap {
+    padding-top: 58px;
+  }
+}
   .nav-hamburger {
   width: 38px;
   height: 38px;
