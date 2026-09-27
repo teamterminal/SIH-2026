@@ -1682,6 +1682,143 @@ async function loadDashboardOverviewTab() {
   }
 }
 
+// ---- igot-courses.html: real course matches from skill_gaps ----
+async function loadIgotCourses() {
+  const loadingEl = document.getElementById('igot-loading');
+  const emptyEl = document.getElementById('igot-empty');
+  const listEl = document.getElementById('igot-course-list');
+
+  if (!currentUser || !currentUser.id) {
+    loadingEl.textContent = 'Sign in to see your recommendations.';
+    return;
+  }
+
+  const { data: gaps, error: gapsError } = await supabaseClient
+    .from('skill_gaps')
+    .select('skill_id, skill_name, gap')
+    .eq('profile_id', currentUser.id)
+    .gt('gap', 0)
+    .order('gap', { ascending: false });
+
+  if (gapsError || !gaps || gaps.length === 0) {
+    loadingEl.style.display = 'none';
+    emptyEl.style.display = 'block';
+    return;
+  }
+
+  const skillIds = gaps.map(g => g.skill_id);
+
+  const { data: courseLinks, error: coursesError } = await supabaseClient
+    .from('course_skills')
+    .select('skill_id, courses(id, title, description, igot_link)')
+    .in('skill_id', skillIds);
+
+  if (coursesError || !courseLinks || courseLinks.length === 0) {
+    console.error('Failed to load matching courses:', coursesError);
+    loadingEl.style.display = 'none';
+    emptyEl.style.display = 'block';
+
+    emptyEl.querySelector('h3').textContent = 'No matching courses yet';
+    emptyEl.querySelector('p').textContent =
+      'You have open gaps, but no course in the catalog covers them yet.';
+
+    return;
+  }
+
+  const gapBySkillId = Object.fromEntries(
+    gaps.map(g => [g.skill_id, g])
+  );
+
+  const courses = courseLinks
+    .filter(l => l.courses)
+    .map(l => ({
+      title: l.courses.title,
+      description: l.courses.description || '',
+      igot_link: l.courses.igot_link || 'https://igotkarmayogi.gov.in/',
+      skill_name: gapBySkillId[l.skill_id]?.skill_name || '',
+      gap: gapBySkillId[l.skill_id]?.gap || 0
+    }))
+    .sort((a, b) => b.gap - a.gap)
+    .slice(0, 6);
+
+  const badges = [
+    { label: 'PRIORITY FIX', bg: 'var(--brick)', color: '#fff' },
+    { label: 'SKILL REFINEMENT', bg: 'var(--amber)', color: '#12181F' },
+    { label: 'ADVANCED MODULE', bg: 'var(--teal)', color: '#fff' }
+  ];
+
+  listEl.innerHTML = '';
+
+  courses.forEach((c, i) => {
+    const badge = badges[i] || badges[badges.length - 1];
+    const gapPercent = Math.round(c.gap * 10);
+
+    const card = document.createElement('div');
+    card.className = 'ledger course-card';
+    card.style.margin = '0';
+
+    card.innerHTML = `
+      <div class="ledger-tab" style="background:${badge.bg}; color:${badge.color};">
+        ${badge.label}
+      </div>
+
+      <div class="num mono">
+        COURSE ${String(i + 1).padStart(2, '0')} · IGOT PORTAL
+      </div>
+
+      <h3 style="
+        font-size:18px;
+        font-weight:700;
+        margin-top:6px;
+        font-family:'Space Grotesk',sans-serif;
+      ">
+        ${c.title}
+      </h3>
+
+      <p style="
+        font-size:13px;
+        color:var(--slate);
+        margin-top:6px;
+        line-height:1.5;
+      ">
+        ${c.description || 'On iGOT Karmayogi.'}
+      </p>
+
+      <div style="
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        margin-top:16px;
+        flex-wrap:wrap;
+        gap:10px;
+      ">
+        <span class="course-tag mono">
+          RESOLVES GAP: ${c.skill_name.toUpperCase()} (${gapPercent}%)
+        </span>
+
+        <a
+          href="${c.igot_link}"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="btn btn-solid"
+          style="
+            padding:8px 16px;
+            font-size:12px;
+            text-decoration:none;
+          "
+        >
+          Open on iGOT &rarr;
+        </a>
+      </div>
+    `;
+
+    listEl.appendChild(card);
+  });
+
+  loadingEl.style.display = 'none';
+  listEl.style.display = 'grid';
+}
+
 // ---- practice: real course recommendations from skill_gaps (practice.html only) ----
 let recommendedCourses = [];
 let recommendedIndex = 0;
